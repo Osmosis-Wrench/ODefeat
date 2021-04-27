@@ -39,97 +39,58 @@ Topic property Hello Auto
 Topic property Bye auto
 Topic property HowMuch auto
 faction property SuccubusDialogueFaction auto
-
 MiscObject  Property Gold Auto
-
 Sound property FXMeleePunchMediumS auto
 Sound property FXMeleePunchLargeS auto
-
 faction property calmFaction auto
 Spell Property SuccCrimeSpell Auto
-
 ReferenceAlias Property PlayerFollowerAlias auto
 ReferenceAlias Property PlayerWaitAlias auto
-
 ReferenceAlias Property SuccubusWalkAttacker auto
 ReferenceAlias Property SuccubusWalkVictim auto
-
-
 faction property SuccubusSlaveFaction auto
 Quest Property SlaveQuest auto
-
 FormList property SuccubusProcessedNPCs auto
-
 SuccubusGameBar Bar
-
 int cycleCount
-
 bool runningAttack
-
 int nextKey
-
 int spellTimer
-
 Float attackStatus
-
 bool attackComplete
-
 bool bountySet
-
 int warmup
-
 int difficultyCounter
-
 bool victory
-
 actor Aactor
 actor property Dactor auto
-
 actor PlayerFollowPartner
-
 int stripStage
-
 Armor[] clothes ; 0 head, 1 hands, 2 feet, 3 chest
-
 ObjectReference[] property things auto
-
 bool PlayerAttacker
-
 bool property targetHasCrimeFaction auto
-
 actor talker
-
 float lastNudityReport
-
 SuccubusApexScript apex
 playersuccubustrackingscriptmale main
-
 EFFCore eff
-
 Quest Property FollowerExtension auto ; EFFCore script
-
 int allowedVictimsMode
-
 bool trackingNPCCombat
-
 int npcCount
 faction jobInnServer
 faction FavorJobsBeggarFaction
 faction succubusprocessed
 faction MarkarthTempleofDibellaFaction
-
 ObjectReference posref
-
 String[] sexActs
 Float[] sexPriceMults
-
 bool playerOwesService
 int lastAcceptedProstPrice
 int lastSelectedAct
 bool transPlayer ; true sex is kept secret
-
 OsexIntegrationMain ostim
-
 bool useOstimForNonAggressive
 
 function Startup(SuccubusGameBar barinput)
@@ -290,7 +251,6 @@ Function AttemptAttack(actor attacker, actor victim)
 	if !CanSex(victim)
 		return
 	endif
-
 	if runningAttack
 		Return
 	endif
@@ -340,7 +300,7 @@ Function AttemptAttack(actor attacker, actor victim)
 	if 	ActorIsHelpless(victim) ;has trauma spell
 		attackComplete = True
 		victory = true
-
+		;Just gonna start removing Player succ stuff.
 		;if isEnslaved(victim)
 		;	if playersuccubustrackingscriptmale.chanceRoll(75)
 		;		violentAnim = false
@@ -350,10 +310,9 @@ Function AttemptAttack(actor attacker, actor victim)
 		StruggleAnim(victim, attacker) 
 	endif
 	
-	SuccCrimeSpell.cast(Aactor)	
+	SuccCrimeSpell.cast(Aactor)	;wtf?
 
 	while !attackComplete
-
 		if warmup > 0 ; free wait time to start
 			if cycleCount > 0
 				warmup = 0
@@ -597,6 +556,131 @@ Float Function calcActorDifficulty(actor target) ; 5 easy. 7 hard.
 
 	return (ret)
 endfunction
+
+Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool victimStayDown = false, bool noIdle = false)
+	;If !StruggleIsCreature
+	if true
+		If Animate
+			If (Aggressor != Playerref)
+	 			ActorUtil.AddPackageOverride(Aggressor, DoNothing, 100, 1)
+				Aggressor.EvaluatePackage()
+				Aggressor.SetRestrained()
+				Aggressor.SetDontMove(true)
+			Else
+				Game.SetPlayerAiDriven()
+				Game.ForceThirdPerson()
+			Endif
+			
+			if playersuccubustrackingscriptmale.chanceRoll(50)
+				victim.SetExpressionOverride(6, 100)
+			Else
+				victim.SetExpressionOverride(4, 100)
+			endif
+			
+			ActorUtil.AddPackageOverride(Victim, DoNothing, 100, 1)
+
+			;Aggressor.SetRestrained(true)
+			;Aggressor.SetDontMove(true)
+
+			victim.SetRestrained(true)
+			victim.SetDontMove(true)
+			Aggressor.SetDontMove(true)
+
+
+			
+
+
+			
+
+			if Aggressor == playerref
+				(posref).MoveTo(Aggressor) ; PosRef
+			Else
+				(posref).MoveTo(victim)
+			endif
+
+			float[] CenterLocation = new float[6]
+
+			CenterLocation[0] = posref.GetPositionX()
+			CenterLocation[1] = posref.GetPositionY()
+			CenterLocation[2] = posref.GetPositionZ()
+			CenterLocation[3] = posref.GetAngleX()
+			CenterLocation[4] = posref.GetAngleY()
+			CenterLocation[5] = posref.GetAngleZ()
+
+			
+			;Float AngleZ = Victim.GetAngleZ()
+			;Aggressor.MoveTo(Victim, 0.0 * Math.Sin(AngleZ), 0.0 * Math.Cos(AngleZ))
+
+			
+
+			
+			;If StruggleStanding
+			if Aggressor == playerref
+				CenterLocation[3] = 21
+				CenterLocation[4] = 0
+				CenterLocation[5] = 240
+
+				int offset = Utility.RandomInt(20, 30)
+				Aggressor.SetPosition(CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
+				Aggressor.SetAngle(CenterLocation[3] - 60, CenterLocation[4], CenterLocation[5] - offset)
+			Else
+				Aggressor.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 6)
+				Aggressor.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
+			endif
+
+			victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
+			victim.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
+
+			Victim.SetVehicle(posref) ; PosRef
+			Aggressor.SetVehicle(posref) ; PosRef
+
+		
+			Debug.SendAnimationEvent(Victim, "Leito_nc_missionary_A1_S1")
+			Debug.SendAnimationEvent(Aggressor, "Leito_nc_missionary_A2_S1")
+				;Float Fangle = (Victim.GetHeadingAngle(Aggressor))
+				;If ((Fangle < 110) && (Fangle > -110)) ; Returns FALSE for a hit in the back
+				;	SendAnimationEvent(Victim, "Leito_Doggystyle_A1_S1")
+				;	SendAnimationEvent(Aggressor, "Leito_Doggystyle_A2_S1")
+				;Else
+				;	SendAnimationEvent(Victim, "Zyn_Standing_A1_S1")
+				;	SendAnimationEvent(Aggressor, "Zyn_Standing_A2_S1")
+	
+		Else
+
+			;Aggressor.SetDontMove(false)
+
+
+			Victim.SetVehicle(None) 
+			Aggressor.SetVehicle(None) 
+
+
+			Aggressor.SetRestrained(false)
+			Aggressor.SetDontMove(false)
+
+			victim.SetRestrained(false)
+			victim.SetDontMove(false)
+			ActorUtil.RemovePackageOverride(Victim, DoNothing)
+			
+
+			If (Aggressor != Playerref)
+				Aggressor.SetRestrained(False)
+				Aggressor.SetDontMove(false)
+				ActorUtil.RemovePackageOverride(Aggressor, DoNothing)
+			Else
+				Game.SetPlayerAiDriven(False)
+			Endif
+			
+			if !noIdle
+				Debug.SendAnimationEvent(Aggressor, "IdleForceDefaultState")
+			EndIf
+
+
+			if !victimStayDown
+				;Debug.SendAnimationEvent(Victim, "IdleForceDefaultState")
+			endif
+		Endif
+	Endif
+EndFunction
 
 function ResetAttackState() ;run this if stuck
 	runningAttack = false
@@ -2480,130 +2564,7 @@ function OnSeePlayerNaked(actor npc)
 
 endfunction
 
-Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool victimStayDown = false, bool noIdle = false)
-	;If !StruggleIsCreature
-	if true
-		If Animate
-			If (Aggressor != Playerref)
-	 			ActorUtil.AddPackageOverride(Aggressor, DoNothing, 100, 1)
-				Aggressor.EvaluatePackage()
-				Aggressor.SetRestrained()
-				Aggressor.SetDontMove(true)
-			Else
-				Game.SetPlayerAiDriven()
-				Game.ForceThirdPerson()
-			Endif
-			
-			if playersuccubustrackingscriptmale.chanceRoll(50)
-				victim.SetExpressionOverride(6, 100)
-			Else
-				victim.SetExpressionOverride(4, 100)
-			endif
-			
-			ActorUtil.AddPackageOverride(Victim, DoNothing, 100, 1)
 
-			;Aggressor.SetRestrained(true)
-			;Aggressor.SetDontMove(true)
-
-			victim.SetRestrained(true)
-			victim.SetDontMove(true)
-			Aggressor.SetDontMove(true)
-
-
-			
-
-
-			
-
-			if Aggressor == playerref
-				(posref).MoveTo(Aggressor) ; PosRef
-			Else
-				(posref).MoveTo(victim)
-			endif
-
-			float[] CenterLocation = new float[6]
-
-			CenterLocation[0] = posref.GetPositionX()
-			CenterLocation[1] = posref.GetPositionY()
-			CenterLocation[2] = posref.GetPositionZ()
-			CenterLocation[3] = posref.GetAngleX()
-			CenterLocation[4] = posref.GetAngleY()
-			CenterLocation[5] = posref.GetAngleZ()
-
-			
-			;Float AngleZ = Victim.GetAngleZ()
-			;Aggressor.MoveTo(Victim, 0.0 * Math.Sin(AngleZ), 0.0 * Math.Cos(AngleZ))
-
-			
-
-			
-			;If StruggleStanding
-			if Aggressor == playerref
-				CenterLocation[3] = 21
-				CenterLocation[4] = 0
-				CenterLocation[5] = 240
-
-				int offset = Utility.RandomInt(20, 30)
-				Aggressor.SetPosition(CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
-				Aggressor.SetAngle(CenterLocation[3] - 60, CenterLocation[4], CenterLocation[5] - offset)
-			Else
-				Aggressor.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 6)
-				Aggressor.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
-			endif
-
-			victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
-			victim.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
-
-			Victim.SetVehicle(posref) ; PosRef
-			Aggressor.SetVehicle(posref) ; PosRef
-
-		
-			Debug.SendAnimationEvent(Victim, "Leito_nc_missionary_A1_S1")
-			Debug.SendAnimationEvent(Aggressor, "Leito_nc_missionary_A2_S1")
-;				Float Fangle = (Victim.GetHeadingAngle(Aggressor))
-;				If ((Fangle < 110) && (Fangle > -110)) ; Returns FALSE for a hit in the back
-;					SendAnimationEvent(Victim, "Leito_Doggystyle_A1_S1")
-;					SendAnimationEvent(Aggressor, "Leito_Doggystyle_A2_S1")
-;				Else
-;					SendAnimationEvent(Victim, "Zyn_Standing_A1_S1")
-;					SendAnimationEvent(Aggressor, "Zyn_Standing_A2_S1")
-;	
-		Else
-
-			;Aggressor.SetDontMove(false)
-
-
-			Victim.SetVehicle(None) 
-			Aggressor.SetVehicle(None) 
-
-
-			Aggressor.SetRestrained(false)
-			Aggressor.SetDontMove(false)
-
-			victim.SetRestrained(false)
-			victim.SetDontMove(false)
-			ActorUtil.RemovePackageOverride(Victim, DoNothing)
-			
-
-			If (Aggressor != Playerref)
-				Aggressor.SetRestrained(False)
-				Aggressor.SetDontMove(false)
-				ActorUtil.RemovePackageOverride(Aggressor, DoNothing)
-			Else
-				Game.SetPlayerAiDriven(False)
-			Endif
-			
-			if !noIdle
-				Debug.SendAnimationEvent(Aggressor, "IdleForceDefaultState")
-			EndIf
-
-
-			if !victimStayDown
-				;Debug.SendAnimationEvent(Victim, "IdleForceDefaultState")
-			endif
-		Endif
-	Endif
-EndFunction
 
 
 Bool Function Trauma(Actor Target,  Bool Enter = True) 

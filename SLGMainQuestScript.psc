@@ -215,6 +215,389 @@ function Startup(SuccubusGameBar barinput)
  	console("is female: " + isFemale(playerref))
 EndFunction
 
+; When G is pressed, it will try to call AttemptAttack
+Event onKeyDown(int keyn)
+	
+
+	if Utility.IsInMenuMode()
+		Return
+	EndIf
+
+	if keyn == 34 ;G
+		;debug.Notification("Attacking")
+		;runningAttack = false
+		;transPlayer = true
+		if runningAttack
+			Debug.Notification("Attack already running")
+			Return
+		endif
+
+		objectreference ref = Game.GetCurrentCrosshairRef()
+		;Debug.MessageBox(ref.GetBaseObject().GetType())
+		if (ref as actor)	
+			actor npc = ref as actor
+			if !npc.IsDead()
+				AttemptAttack(playerref, ref as actor)
+			else
+				StripNPC(npc)
+			endif
+		elseif (ref.GetBaseObject() as weapon) || (ref.GetBaseObject() as armor)
+			
+			playerref.AddItem(ref, abSilent = true)
+			playerref.equipitem(ref.GetBaseObject())
+		endif
+	endif
+
+	if keyn == 207
+		openDataMenu()
+	endif
+
+	if keyn == 37 ;K
+
+
+		;actor target = GetPlayerTalkPartner()
+		actor target = Game.GetCurrentCrosshairRef() as actor
+
+		if isEnslaved(target)
+			openSlaveMenu(target)
+		elseif ActorIsHelpless(target)
+			opentraumamenu(target)
+		elseif isFollower(target)
+			openFollowerMenu(target)
+		elseif target && !target.IsDead() && !target.IsInCombat() && !target.IsHostileToActor(playerref) && target.GetRace().HasKeyword(Keyword.GetKeyword("ActorTypeNPC"))
+			if target == PlayerFollowPartner
+				OpenSexStartMenu(target)
+			Else
+				OpenNPCMenu(target)
+			endif
+		endif
+	endif
+
+	if runningAttack
+		if keyn == 42 && nextKey == 0
+			nextKey = 1
+
+		elseif keyn == 54 && nextKey == 1
+			nextKey = 0
+			cycleDone()
+		elseif keyn == 57
+			cycleCount = -200
+		endif
+	endif
+endevent
+
+Function AttemptAttack(actor attacker, actor victim)
+	if !CanSex(victim)
+		return
+	endif
+
+	if runningAttack
+		Return
+	endif
+	runningAttack = true
+	attacker.SheatheWeapon()
+	victim.SheatheWeapon()
+	targetHasCrimeFaction = victim.GetCrimeFaction() as Bool
+	bountySet = false
+	spellTimer = 30
+	Aactor = attacker
+	Dactor = victim
+
+	if attacker == playerref
+		PlayerAttacker = True
+	Else
+		PlayerAttacker = False
+	endif
+
+	stripStage = 0
+	victory = false
+
+	float difficulty = calcActordifficulty(victim)
+
+	if PlayerAttacker
+		difficulty = calcActordifficulty(victim)
+		warmup = 20
+		Bar.setpercent(0.05)
+		AttackStatus = 5.0
+	Else
+		difficulty = calcActordifficulty(attacker) ;enemy, should be replaced with better algo but doesn't have to be
+		warmup = 20
+		Bar.setpercent(0.80)
+		AttackStatus = 80.0
+		playerref.SetDontMove(true) 
+	;	Debug.SetGodMode(true)
+		toggleCombat()
+
+	endif
+
+	Bar.FadeTo(100, 0.1)
+	attackComplete = false
+	
+	difficultyCounter = 0
+
+	bool violentAnim = true
+
+	if 	ActorIsHelpless(victim) ;has trauma spell
+		attackComplete = True
+		victory = true
+
+		;if isEnslaved(victim)
+		;	if playersuccubustrackingscriptmale.chanceRoll(75)
+		;		violentAnim = false
+		;	endif
+		;endif
+	Else
+		StruggleAnim(victim, attacker) 
+	endif
+	
+	SuccCrimeSpell.cast(Aactor)	
+
+	while !attackComplete
+
+		if warmup > 0 ; free wait time to start
+			if cycleCount > 0
+				warmup = 0
+			else
+				warmup -= 1
+			endif
+		else
+			if attackStatus <= 0 ;get out if bar empty or full
+				attackComplete = true
+				victory = false
+			elseif attackStatus >= 100
+				attackComplete = true
+				victory = true
+			endif
+
+			if PlayerAttacker 
+				attackStatus += cycleCount - difficulty ; cycle bar
+			Else
+				attackStatus -= cycleCount - difficulty
+			endif
+
+			Bar.setPercent(attackStatus / 100.0) 
+			cycleCount = 0
+			difficultyCounter += 1
+
+			if difficultyCounter >= 50 ;boost difficulty if slow
+				difficulty +=1
+				difficultyCounter = 0
+			endif
+
+
+			if spellTimer < 1
+				SuccCrimeSpell.cast(Aactor)		
+				spellTimer = 30
+			Else
+				spellTimer -= 1
+			endif
+
+
+			if playerattacker
+				if stripStage == 0 && attackStatus >= 20 ; helmet
+					strip(victim.GetWornForm(0x00000002), victim)
+				elseif stripStage == 1 && attackStatus >= 40 ;gauntlet
+					strip(victim.GetWornForm(0x00000008), victim)
+				elseif stripStage == 2 && attackStatus >= 60 ;feet
+					strip(victim.GetWornForm(0x00000080), victim)
+				elseif stripStage == 3 && attackStatus >= 80 ;left hand
+					strip(victim.GetEquippedObject(0) as form, victim)
+				elseif stripStage == 4  && attackStatus >= 90;right hand
+					strip(victim.GetEquippedObject(1) as form, victim) 
+				elseif stripStage == 5  && attackStatus >= 95 ;armor!
+					strip(victim.GetWornForm(0x00000004), victim)
+				endif
+			else
+				if stripStage == 0 && attackStatus >= 84 ; helmet
+					strip(victim.GetWornForm(0x00000002), victim)
+				elseif stripStage == 1 && attackStatus >= 87 ;gauntlet
+					strip(victim.GetWornForm(0x00000008), victim)
+				elseif stripStage == 2 && attackStatus >= 91 ;feet
+					strip(victim.GetWornForm(0x00000080), victim)
+				elseif stripStage == 3 && attackStatus >= 94 ;left hand
+					strip(victim.GetEquippedObject(0) as form, victim)
+				elseif stripStage == 4  && attackStatus >= 96;right hand
+					strip(victim.GetEquippedObject(1) as form, victim) 
+				elseif stripStage == 5  && attackStatus >= 98 ;armor!
+					strip(victim.GetWornForm(0x00000004), victim)
+				endif
+			endif
+
+		endif
+			Utility.wait(0.1)
+	endwhile
+	
+	;Debug.Messagebox(cycleCount)
+	Bar.FadeTo(0, 0.5)
+	runningAttack = false
+	cycleCount = 0
+	nextKey = 0
+
+	if victory
+		StruggleAnim(victim, attacker, false, true)
+		
+		
+
+		if PlayerAttacker
+			victim.SetDontMove(true)
+		else
+			attacker.SetDontMove(true)
+		endif
+
+		if PlayerAttacker
+			
+			if ActorIsHelpless(victim)
+				doOStim(attacker, victim, -1, aggressive = true)
+			else
+				Trauma(victim)
+			endif
+
+		Else
+			playerAttackFailedEvent(attacker)
+			
+		endif
+		
+
+		if PlayerAttacker
+			victim.SetDontMove(False)
+		else
+			attacker.SetDontMove(false)
+		endif
+
+		;debug.Notification("sex over")
+	else
+		StruggleAnim(victim, attacker, false, false, True)
+		attacker.pushactoraway(victim, 0)
+		victim.pushactoraway(attacker, 3)
+		FXMeleePunchLargeS.Play(Attacker)
+		if PlayerAttacker
+				Game.triggerscreenblood(20)
+		endif
+
+		if PlayerAttacker
+			victim.StartCombat(attacker)
+			victim.DrawWeapon()
+		Else
+			attacker.StartCombat(attacker)
+			attacker.DrawWeapon()
+		endif
+
+
+	endif
+
+	if !PlayerAttacker
+		playerref.SetDontMove(false)
+		Utility.wait(2)
+		toggleCombat()
+		;Debug.SetGodMode(false)
+		;Game.DisablePlayerControls(false, false, false, false, false, false, false)
+	endif
+endfunction
+
+Float Function calcActorDifficulty(actor target) ; 5 easy. 7 hard.
+ 
+	;/-----------------DATA------------
+		dungeon data
+
+		player level 1
+		Enemies
+			Bandit: level 1
+			Bandit outlaw: Level 5 (boss)
+
+		Player level 8
+			Bandit outlaw: Level 5 (common enemy)
+			Bandit: level 1
+			Bandit Highwayman: 14 (boss)
+			Bandit chief: (6??)
+
+		Player level 15
+			Bandit: 1 (rare weak enemy) (Easy, 33% of level or lower) (Full health: normal)
+			Bandit thug: 9 (common enemy) (Normal, 66% of level or lower) (Full health: hard)
+			Bandit Highwayman: 14 (very rare miniboss) (Hard, 100% of level or lower) (Full health: harder)
+			Bandit Plunderer: 19 (boss) (Very hard, 125% of level) (Full health: very hard)
+
+		Player level 30
+			Bandit Plunderer: 19 (common enemy)
+			Bandit: 1 (rare weak enemy)
+			Bandit Marauder: 25 (boss)
+			Bandit Outlaw: 5
+
+		Modded (arena mod): https://www.nexusmods.com/skyrimspecialedition/mods/33487
+			0.66x: Easy
+			1.00x: Normal
+			1.25x: Hard
+			1.50x: Very Hard
+
+	--------------------------------/;
+
+	bool cheatMode = false 
+	if cheatMode
+		return 0
+	endif
+
+	bool arena = false ; arena mod:https://www.nexusmods.com/skyrimspecialedition/mods/33487/
+
+	int playerLevel = playerref.GetLevel()
+	int enemyLevel = target.GetLevel()
+	float ret = 6.0
+
+
+	float enemyHealth = target.GetActorValuePercentage("Health") * 100
+	float levelRatio = ((enemyLevel as Float)/(playerLevel as Float)) * 100
+
+	if !arena
+		if levelRatio > 140 ; vanilla: underleveled | arena: hard
+			ret = 10.0
+		elseif levelRatio > 100 ; vanilla: very hard | arena: normal
+			ret = 9.0
+		elseif levelRatio > 70 ; vanilla: hard | arena: easy
+			ret = 8.0
+		elseif levelRatio > 35 ; vanilla: normal | arena: very easy
+			ret = 7.5
+		EndIf
+	Else
+		if levelRatio > 165 ; arena: underleveled
+			ret = 10.0
+		elseif levelRatio > 125 ; vanilla: underleveled | arena: very hard
+			ret = 9.0
+		elseif levelRatio > 100 
+			ret = 8.0
+		elseif levelRatio > 70 
+			ret = 7.5
+		elseif levelRatio > 35 
+			ret = 6.5
+		EndIf
+	endif
+
+	if target.IsBleedingOut()
+		ret -= 7.5
+	Else
+		ret -= ((100.0 - (enemyHealth)) / 40.0) ; each 40% damage done takes off one level
+	EndIf
+
+	if !playerref.IsDetectedBy(target)
+		ret -= 1
+	endif
+
+	if !target.IsInCombat()
+		ret -= 1
+	endif
+
+	if target.GetSleepState() == 3
+		ret -= 1
+	endif
+
+	if ret < 5.0
+		ret = 5.0
+	endif
+
+
+		
+	;debug.messagebox("Health: " + enemyHealth + " Level: " + levelRatio + " Difficulty: " + ret)
+
+	return (ret)
+endfunction
+
 function ResetAttackState() ;run this if stuck
 	runningAttack = false
 	PlayerFollowerAlias.clear()
@@ -1312,75 +1695,7 @@ function SetAsFollower(actor npc, bool set) ; follower in literal sense, not com
 	endif
 EndFunction
 
-Event onKeyDown(int keyn)
-	
 
-	if Utility.IsInMenuMode()
-		Return
-	EndIf
-
-	if keyn == 34 ;G
-		;debug.Notification("Attacking")
-		;runningAttack = false
-		;transPlayer = true
-		if runningAttack
-			Debug.Notification("Attack already running")
-			Return
-		endif
-
-		objectreference ref = Game.GetCurrentCrosshairRef()
-		;Debug.MessageBox(ref.GetBaseObject().GetType())
-		if (ref as actor)	
-			actor npc = ref as actor
-			if !npc.IsDead()
-				AttemptAttack(playerref, ref as actor)
-			else
-				StripNPC(npc)
-			endif
-		elseif (ref.GetBaseObject() as weapon) || (ref.GetBaseObject() as armor)
-			
-			playerref.AddItem(ref, abSilent = true)
-			playerref.equipitem(ref.GetBaseObject())
-		endif
-	endif
-
-	if keyn == 207
-		openDataMenu()
-	endif
-
-	if keyn == 37 ;K
-
-
-		;actor target = GetPlayerTalkPartner()
-		actor target = Game.GetCurrentCrosshairRef() as actor
-
-		if isEnslaved(target)
-			openSlaveMenu(target)
-		elseif ActorIsHelpless(target)
-			opentraumamenu(target)
-		elseif isFollower(target)
-			openFollowerMenu(target)
-		elseif target && !target.IsDead() && !target.IsInCombat() && !target.IsHostileToActor(playerref) && target.GetRace().HasKeyword(Keyword.GetKeyword("ActorTypeNPC"))
-			if target == PlayerFollowPartner
-				OpenSexStartMenu(target)
-			Else
-				OpenNPCMenu(target)
-			endif
-		endif
-	endif
-
-	if runningAttack
-		if keyn == 42 && nextKey == 0
-			nextKey = 1
-
-		elseif keyn == 54 && nextKey == 1
-			nextKey = 0
-			cycleDone()
-		elseif keyn == 57
-			cycleCount = -200
-		endif
-	endif
-endevent
 
 Function StripNPC(actor npc)
 	
@@ -1731,237 +2046,7 @@ function toggleCombat() ;huge hack
 	ConsoleUtil.ExecuteCommand("tcai")
 
 endfunction
-Function AttemptAttack(actor attacker, actor victim)
-	if !CanSex(victim)
-		return
-	endif
 
-	if runningAttack
-		Return
-	endif
-
-	runningAttack = true
-
-
-	attacker.SheatheWeapon()
-	victim.SheatheWeapon()
-	
-
-	targetHasCrimeFaction = victim.GetCrimeFaction() as Bool
-
-	bountySet = false
-
-	spellTimer = 30
-
-
-	Aactor = attacker
-	Dactor = victim
-
-	if attacker == playerref
-		PlayerAttacker = True
-	Else
-		PlayerAttacker = False
-	endif
-
-	stripStage = 0
-
-	victory = false
-
-	
-
-
-
-	float difficulty = calcActordifficulty(victim)
-
-	if PlayerAttacker
-		difficulty = calcActordifficulty(victim)
-		warmup = 20
-		Bar.setpercent(0.05)
-		AttackStatus = 5.0
-	Else
-		difficulty = calcActordifficulty(attacker) ;enemy, should be replaced with better algo but doesn't have to be
-		warmup = 20
-		Bar.setpercent(0.80)
-		AttackStatus = 80.0
-		playerref.SetDontMove(true) 
-	;	Debug.SetGodMode(true)
-		toggleCombat()
-
-	endif
-
-
-	Bar.FadeTo(100, 0.1)
-	attackComplete = false
-	
-	difficultyCounter = 0
-
-
-	bool violentAnim = true
-
-	if 	ActorIsHelpless(victim) ;has trauma spell
-		attackComplete = True
-		victory = true
-
-		if isEnslaved(victim)
-			if playersuccubustrackingscriptmale.chanceRoll(75)
-				violentAnim = false
-			endif
-		endif
-	Else
-		StruggleAnim(victim, attacker) 
-	endif
-	
-	SuccCrimeSpell.cast(Aactor)	
-
-	while !attackComplete
-
-
-		if warmup > 0 ; free wait time to start
-			if cycleCount > 0
-				warmup = 0
-			else
-				warmup -= 1
-			endif
-		else
-			if attackStatus <= 0 ;get out if bar empty or full
-				attackComplete = true
-				victory = false
-			elseif attackStatus >= 100
-				attackComplete = true
-				victory = true
-			endif
-
-			if PlayerAttacker 
-				attackStatus += cycleCount - difficulty ; cycle bar
-			Else
-				attackStatus -= cycleCount - difficulty
-			endif
-
-			Bar.setPercent(attackStatus / 100.0) 
-			cycleCount = 0
-			difficultyCounter += 1
-
-			if difficultyCounter >= 50 ;boost difficulty if slow
-				difficulty +=1
-				difficultyCounter = 0
-			endif
-
-
-			if spellTimer < 1
-				SuccCrimeSpell.cast(Aactor)		
-				spellTimer = 30
-			Else
-				spellTimer -= 1
-			endif
-
-
-			if playerattacker
-				if stripStage == 0 && attackStatus >= 20 ; helmet
-					strip(victim.GetWornForm(0x00000002), victim)
-				elseif stripStage == 1 && attackStatus >= 40 ;gauntlet
-					strip(victim.GetWornForm(0x00000008), victim)
-				elseif stripStage == 2 && attackStatus >= 60 ;feet
-					strip(victim.GetWornForm(0x00000080), victim)
-				elseif stripStage == 3 && attackStatus >= 80 ;left hand
-					strip(victim.GetEquippedObject(0) as form, victim)
-				elseif stripStage == 4  && attackStatus >= 90;right hand
-					strip(victim.GetEquippedObject(1) as form, victim) 
-				elseif stripStage == 5  && attackStatus >= 95 ;armor!
-					strip(victim.GetWornForm(0x00000004), victim)
-				endif
-			else
-				if stripStage == 0 && attackStatus >= 84 ; helmet
-					strip(victim.GetWornForm(0x00000002), victim)
-				elseif stripStage == 1 && attackStatus >= 87 ;gauntlet
-					strip(victim.GetWornForm(0x00000008), victim)
-				elseif stripStage == 2 && attackStatus >= 91 ;feet
-					strip(victim.GetWornForm(0x00000080), victim)
-				elseif stripStage == 3 && attackStatus >= 94 ;left hand
-					strip(victim.GetEquippedObject(0) as form, victim)
-				elseif stripStage == 4  && attackStatus >= 96;right hand
-					strip(victim.GetEquippedObject(1) as form, victim) 
-				elseif stripStage == 5  && attackStatus >= 98 ;armor!
-					strip(victim.GetWornForm(0x00000004), victim)
-				endif
-			endif
-
-		endif
-			Utility.wait(0.1)
-	endwhile
-
-	
-	;Debug.Messagebox(cycleCount)
-	Bar.FadeTo(0, 0.5)
-	runningAttack = false
-	cycleCount = 0
-	nextKey = 0
-
-	
-
-
-	
-
-	if victory
-		StruggleAnim(victim, attacker, false, true)
-		
-		
-
-		if PlayerAttacker
-			victim.SetDontMove(true)
-		else
-			attacker.SetDontMove(true)
-		endif
-
-		if PlayerAttacker
-			
-			if ActorIsHelpless(victim)
-				doOStim(attacker, victim, -1, aggressive = true)
-			else
-				Trauma(victim)
-			endif
-
-		Else
-			playerAttackFailedEvent(attacker)
-			
-		endif
-		
-
-		if PlayerAttacker
-			victim.SetDontMove(False)
-		else
-			attacker.SetDontMove(false)
-		endif
-
-		;debug.Notification("sex over")
-	else
-		StruggleAnim(victim, attacker, false, false, True)
-		attacker.pushactoraway(victim, 0)
-		victim.pushactoraway(attacker, 3)
-		FXMeleePunchLargeS.Play(Attacker)
-		if PlayerAttacker
-				Game.triggerscreenblood(20)
-		endif
-
-		if PlayerAttacker
-			victim.StartCombat(attacker)
-			victim.DrawWeapon()
-		Else
-			attacker.StartCombat(attacker)
-			attacker.DrawWeapon()
-		endif
-
-
-	endif
-
-	if !PlayerAttacker
-		playerref.SetDontMove(false)
-		Utility.wait(2)
-		toggleCombat()
-		;Debug.SetGodMode(false)
-		;Game.DisablePlayerControls(false, false, false, false, false, false, false)
-	endif
-
-endfunction
 
 function playerAttackFailedEvent(actor attacker) ;called when player loses a rape event to an attacker
 	doSex(attacker, playerref, true, isFemale(attacker)) ; player lost, will now be raped
@@ -2301,109 +2386,7 @@ endfunction
 
 
 
-Float Function calcActorDifficulty(actor target) ; 5 easy. 7 hard.
- 
-	;/-----------------DATA------------
-		dungeon data
 
-		player level 1
-		Enemies
-			Bandit: level 1
-			Bandit outlaw: Level 5 (boss)
-
-		Player level 8
-			Bandit outlaw: Level 5 (common enemy)
-			Bandit: level 1
-			Bandit Highwayman: 14 (boss)
-			Bandit chief: (6??)
-
-		Player level 15
-			Bandit: 1 (rare weak enemy) (Easy, 33% of level or lower) (Full health: normal)
-			Bandit thug: 9 (common enemy) (Normal, 66% of level or lower) (Full health: hard)
-			Bandit Highwayman: 14 (very rare miniboss) (Hard, 100% of level or lower) (Full health: harder)
-			Bandit Plunderer: 19 (boss) (Very hard, 125% of level) (Full health: very hard)
-
-		Player level 30
-			Bandit Plunderer: 19 (common enemy)
-			Bandit: 1 (rare weak enemy)
-			Bandit Marauder: 25 (boss)
-			Bandit Outlaw: 5
-
-		Modded (arena mod): https://www.nexusmods.com/skyrimspecialedition/mods/33487
-			0.66x: Easy
-			1.00x: Normal
-			1.25x: Hard
-			1.50x: Very Hard
-
-	--------------------------------/;
-
-	bool cheatMode = false 
-	if cheatMode
-		return 0
-	endif
-
-	bool arena = false ; arena mod:https://www.nexusmods.com/skyrimspecialedition/mods/33487/
-
-	int playerLevel = playerref.GetLevel()
-	int enemyLevel = target.GetLevel()
-	float ret = 6.0
-
-
-	float enemyHealth = target.GetActorValuePercentage("Health") * 100
-	float levelRatio = ((enemyLevel as Float)/(playerLevel as Float)) * 100
-
-	if !arena
-		if levelRatio > 140 ; vanilla: underleveled | arena: hard
-			ret = 10.0
-		elseif levelRatio > 100 ; vanilla: very hard | arena: normal
-			ret = 9.0
-		elseif levelRatio > 70 ; vanilla: hard | arena: easy
-			ret = 8.0
-		elseif levelRatio > 35 ; vanilla: normal | arena: very easy
-			ret = 7.5
-		EndIf
-	Else
-		if levelRatio > 165 ; arena: underleveled
-			ret = 10.0
-		elseif levelRatio > 125 ; vanilla: underleveled | arena: very hard
-			ret = 9.0
-		elseif levelRatio > 100 
-			ret = 8.0
-		elseif levelRatio > 70 
-			ret = 7.5
-		elseif levelRatio > 35 
-			ret = 6.5
-		EndIf
-	endif
-
-	if target.IsBleedingOut()
-		ret -= 7.5
-	Else
-		ret -= ((100.0 - (enemyHealth)) / 40.0) ; each 40% damage done takes off one level
-	EndIf
-
-	if !playerref.IsDetectedBy(target)
-		ret -= 1
-	endif
-
-	if !target.IsInCombat()
-		ret -= 1
-	endif
-
-	if target.GetSleepState() == 3
-		ret -= 1
-	endif
-
-	if ret < 5.0
-		ret = 5.0
-	endif
-
-
-		
-	;debug.messagebox("Health: " + enemyHealth + " Level: " + levelRatio + " Difficulty: " + ret)
-
-	return (ret)
-endfunction
 
 Function cycleDone()
 	cycleCount += 10

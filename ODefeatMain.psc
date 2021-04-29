@@ -3,6 +3,14 @@ Actor Property PlayerRef Auto
 ODefeatMCM Property ODefeatMCM Auto
 OsexIntegrationMain Property Ostim Auto
 
+;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
+; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
+; ██║   ██║██║  ██║█████╗  █████╗  █████╗  ███████║   ██║   
+; ██║   ██║██║  ██║██╔══╝  ██╔══╝  ██╔══╝  ██╔══██║   ██║   
+; ╚██████╔╝██████╔╝███████╗██║     ███████╗██║  ██║   ██║   
+;  ╚═════╝ ╚═════╝ ╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝   
+; ODefeat Main Script
+
 Function onInit()
     Startup()
 EndFunction
@@ -12,10 +20,6 @@ Function startup()
     RegisterForKey(34) ;G - attacks
 	RegisterForKey(37) ;K - enslaves
 	RegisterForKey(207) ;End - opens a menu?
-
-    RegisterForKey(42) ;leftshift - Seems to be related to a RunningAttack function. 
-	RegisterForKey(54) ;rightshift - Seems to be related to a RunningAttack function. 
-	RegisterForKey(57) ;space - Seems to be related to a RunningAttack function. 
 
     ; Attack status information.
     attackStatus = 0 ;what do the other numbers mean?
@@ -28,28 +32,14 @@ Event onKeyDown(int keyCode)
         return
     Elseif (keyCode == 34) ; G
         ;Try to perform attack, or strip dead npc?
-        actor npc = Game.GetCurrentCrosshairRef() as Actor ; find out if there is a faster way to do this with properties.
-        if (!npc.isDead())
-            attemptAttack(PlayerRef, NPC)
-        elseif (npc.isdead())
-            ;Ostim strip? I guess?
-        endif
+        attackKeyHandler()
     Elseif (keyCode == 34) ; K
         ;Enslave target.
+        enslaveKeyHander()
     Elseif (keyCode == 34) ; End
         ;opens a data menu?
+        menuKeyHandler()
     EndIf
-
-    ; Find out what RunningAttack is exactly.
-    if (RunningAttack)
-        if (keyCode == 34) ; Left-shift
-
-        Elseif (keyCode == 34) ; Right-shift
-
-        Elseif (keyCode == 34) ; Spacebar
-        
-        EndIf
-    EndIF
 EndEvent
 
 ;  ███╗   ███╗ █████╗ ██╗███╗   ██╗
@@ -69,7 +59,32 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
 EndFunction
 
 Function StripActor(Actor target)
+    ; Strip targeted actor.
+EndFunction
 
+; ██╗  ██╗███████╗██╗   ██╗██████╗ ██╗███╗   ██╗██████╗ ███████╗
+; ██║ ██╔╝██╔════╝╚██╗ ██╔╝██╔══██╗██║████╗  ██║██╔══██╗██╔════╝
+; █████╔╝ █████╗   ╚████╔╝ ██████╔╝██║██╔██╗ ██║██║  ██║███████╗
+; ██╔═██╗ ██╔══╝    ╚██╔╝  ██╔══██╗██║██║╚██╗██║██║  ██║╚════██║
+; ██║  ██╗███████╗   ██║   ██████╔╝██║██║ ╚████║██████╔╝███████║
+; ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝
+; ODefeat keybind function.
+
+Function attackKeyHandler()
+    actor npc = Game.GetCurrentCrosshairRef() as Actor ; find out if there is a faster way to do this with properties.
+    if (!npc.isDead())
+        attemptAttack(PlayerRef, NPC)
+    elseif (npc.isdead())
+        StripActor(npc)
+    endif
+EndFunction
+    
+Function enslaveKeyHander()
+    ;Stuff
+EndFunction
+
+Function menuKeyHandler()
+    ;Stuff
 EndFunction
 
 ; ███╗   ███╗██╗███████╗ ██████╗

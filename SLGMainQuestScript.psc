@@ -93,6 +93,14 @@ bool transPlayer ; true sex is kept secret
 OsexIntegrationMain ostim
 bool useOstimForNonAggressive
 
+;bugs
+
+;enemies have idle dialogue when trauma'd
+;enemies can sometimes fall through the ground after a trauma duel is lost and they are impulsed
+;occasionally the armor piece is not ripped off during a duel
+
+; ODefeat main code:
+
 function Startup(SuccubusGameBar barinput)
 
 	SuccubusProcessedNPCs = game.GetFormFromFile(0x254495, "DaedricSuccubus.esp") as FormList
@@ -312,6 +320,7 @@ Function AttemptAttack(actor attacker, actor victim)
 	
 	SuccCrimeSpell.cast(Aactor)	;wtf?
 
+	;NEM: This seems to be the main minigame loop.
 	while !attackComplete
 		if warmup > 0 ; free wait time to start
 			if cycleCount > 0
@@ -350,8 +359,7 @@ Function AttemptAttack(actor attacker, actor victim)
 			Else
 				spellTimer -= 1
 			endif
-
-
+			; Nem: Note, find a neater way to do this.
 			if playerattacker
 				if stripStage == 0 && attackStatus >= 20 ; helmet
 					strip(victim.GetWornForm(0x00000002), victim)
@@ -391,12 +399,11 @@ Function AttemptAttack(actor attacker, actor victim)
 	runningAttack = false
 	cycleCount = 0
 	nextKey = 0
-
+	
+	;NEM: If you win tacke, this triggers.
 	if victory
 		StruggleAnim(victim, attacker, false, true)
 		
-		
-
 		if PlayerAttacker
 			victim.SetDontMove(true)
 		else
@@ -406,6 +413,7 @@ Function AttemptAttack(actor attacker, actor victim)
 		if PlayerAttacker
 			
 			if ActorIsHelpless(victim)
+				;NEM: Update this to use modern ostim.
 				doOStim(attacker, victim, -1, aggressive = true)
 			else
 				Trauma(victim)
@@ -413,16 +421,13 @@ Function AttemptAttack(actor attacker, actor victim)
 
 		Else
 			playerAttackFailedEvent(attacker)
-			
 		endif
-		
 
 		if PlayerAttacker
 			victim.SetDontMove(False)
 		else
 			attacker.SetDontMove(false)
 		endif
-
 		;debug.Notification("sex over")
 	else
 		StruggleAnim(victim, attacker, false, false, True)
@@ -440,8 +445,6 @@ Function AttemptAttack(actor attacker, actor victim)
 			attacker.StartCombat(attacker)
 			attacker.DrawWeapon()
 		endif
-
-
 	endif
 
 	if !PlayerAttacker
@@ -453,6 +456,7 @@ Function AttemptAttack(actor attacker, actor victim)
 	endif
 endfunction
 
+; NEM: Calcs the difficulty of the minigame.
 Float Function calcActorDifficulty(actor target) ; 5 easy. 7 hard.
  
 	;/-----------------DATA------------
@@ -557,6 +561,7 @@ Float Function calcActorDifficulty(actor target) ; 5 easy. 7 hard.
 	return (ret)
 endfunction
 
+;NEM: Starts the struggle animation.
 Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool victimStayDown = false, bool noIdle = false)
 	;If !StruggleIsCreature
 	if true
@@ -586,12 +591,6 @@ Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool v
 			victim.SetDontMove(true)
 			Aggressor.SetDontMove(true)
 
-
-			
-
-
-			
-
 			if Aggressor == playerref
 				(posref).MoveTo(Aggressor) ; PosRef
 			Else
@@ -606,14 +605,10 @@ Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool v
 			CenterLocation[3] = posref.GetAngleX()
 			CenterLocation[4] = posref.GetAngleY()
 			CenterLocation[5] = posref.GetAngleZ()
-
-			
+	
 			;Float AngleZ = Victim.GetAngleZ()
 			;Aggressor.MoveTo(Victim, 0.0 * Math.Sin(AngleZ), 0.0 * Math.Cos(AngleZ))
 
-			
-
-			
 			;If StruggleStanding
 			if Aggressor == playerref
 				CenterLocation[3] = 21
@@ -634,7 +629,6 @@ Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool v
 			Victim.SetVehicle(posref) ; PosRef
 			Aggressor.SetVehicle(posref) ; PosRef
 
-		
 			Debug.SendAnimationEvent(Victim, "Leito_nc_missionary_A1_S1")
 			Debug.SendAnimationEvent(Aggressor, "Leito_nc_missionary_A2_S1")
 				;Float Fangle = (Victim.GetHeadingAngle(Aggressor))
@@ -647,12 +641,8 @@ Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool v
 	
 		Else
 
-			;Aggressor.SetDontMove(false)
-
-
 			Victim.SetVehicle(None) 
 			Aggressor.SetVehicle(None) 
-
 
 			Aggressor.SetRestrained(false)
 			Aggressor.SetDontMove(false)
@@ -660,7 +650,6 @@ Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool v
 			victim.SetRestrained(false)
 			victim.SetDontMove(false)
 			ActorUtil.RemovePackageOverride(Victim, DoNothing)
-			
 
 			If (Aggressor != Playerref)
 				Aggressor.SetRestrained(False)
@@ -673,7 +662,6 @@ Function StruggleAnim(Actor Victim, Actor Aggressor, Bool Animate = True, bool v
 			if !noIdle
 				Debug.SendAnimationEvent(Aggressor, "IdleForceDefaultState")
 			EndIf
-
 
 			if !victimStayDown
 				;Debug.SendAnimationEvent(Victim, "IdleForceDefaultState")
@@ -688,6 +676,7 @@ function ResetAttackState() ;run this if stuck
 	PlayerFollowPartner = none
 	debug.MessageBox("State Reset")
 EndFunction
+
 
 actor Function GetPlayerTalkPartner()
 	if talker.IsInDialogueWithPlayer()
@@ -767,6 +756,131 @@ bool function isAllowedToBeRaped(actor npc)
 
 	return false
 EndFunction
+
+Bool Function Trauma(Actor Target,  Bool Enter = True) 
+	if target.IsDead() 
+		Return  false
+	endif
+	if Target == playerref
+		return false
+	endif
+
+	If Enter
+			if isEnslaved(target)
+				Return False
+			endif
+			Calm(Target)
+			;StayStill(Target)
+			;Target.SetRestrained()
+			;Target.SetDontMove()
+			
+			;StateDuration = Duration
+			;Target.addspell(SuccubusTraumaSpell)
+
+			if !Target.HasMagicEffect(succubusTraumaSpell.GetNthEffectMagicEffect(0))		
+				SuccubusTraumaSpell.cast(Target)
+			endif
+				;Perpetrator = Aggressor
+			;SetStringValue(Target, "DefeatState", "Trauma")
+			;SetStringValue(Target, "DefeatType", Type)
+			;SetStringValue(Target, "DefeatStateAnim", "IdleWounded_03")
+			;Target.AddSpell(TraumaSPL)
+			;Target.SetPlayerTeammate(true)
+			Target.EvaluatePackage()
+			Debug.SendAnimationEvent(Target, "IdleWounded_02")
+			Utility.wait(1)
+
+
+
+				;If (i == 0)
+				;	SetStringValue(Target, "DefeatStateAnim", "DefeatEstrusTrauma")
+				;	SendAnimationEvent(Target, "DefeatEstrusTrauma")
+				
+			;		SetStringValue(Target, "DefeatStateAnim", "IdleWounded_02")
+
+			
+			int Tries = 3
+			float X
+			float newX
+
+			X = Target.X
+
+			while Tries != 0
+				Utility.wait(1)
+
+				newX = Target.X
+
+				if newX == X
+					Tries = 0
+				Else
+					;debug.Notification("Trauma failed")
+					Debug.SendAnimationEvent(Target, "IdleWounded_02")
+					X = newX
+					tries -= 1
+				endif
+					
+			endwhile
+
+		
+
+			Return True
+		
+	Else
+		;If Target.HasSpell(TraumaSPL)
+			;UnsetStringValue(Target, "DefeatStateAnim")
+		;	If UnCalm
+				;target.SetPlayerTeammate(false, false)
+
+				Debug.SendAnimationEvent(Target, "DefeatTraumaExit")
+				Calm(Target, Enter = False)
+		;	Endif
+			;StayStill(Target, False)
+			;Target.SetRestrained(False)
+			;Target.SetDontMove(False)
+			;UnsetStringValue(Target, "DefeatState")
+			;UnSetStringValue(Target, "DefeatType")
+		;	Target.RemoveSpell(TraumaSPL)
+			Return True
+		;Endif
+	Endif
+	Return False
+EndFunction
+
+Bool Function Calm(Actor Target, Bool StayPut = True, Bool Enter = True) 
+	If Enter
+		If !Target.IsInFaction(CalmFaction)
+			;Target.AddSpell(TrueCalmSPL)
+			Target.AddToFaction(CalmFaction)
+			Target.StopCombat()
+			Target.StopCombatAlarm()
+			If StayPut
+				ActorUtil.AddPackageOverride(Target, DoNothing, 100, 1)
+				Target.EvaluatePackage()
+				;target.SetDontMove(true)
+			Endif
+			Return True
+		Else
+			Target.StopCombatAlarm()
+		Endif
+	Else
+		;If Target.HasSpell(TrueCalmSPL)
+			Target.RemoveFromFaction(CalmFaction)
+			;target.SetDontMove(false)
+			If StayPut
+				ActorUtil.RemovePackageOverride(Target, DoNothing)
+				Target.EvaluatePackage()
+			Endif
+			;Target.RemoveSpell(TrueCalmSPL)
+			Return True
+		;Endif
+	Endif
+	Return False
+EndFunction
+; Succ mod code:
+
+; Follower code:
+
+; Slavery mod code:
 
 int SlaveMasterID = 0
 int SlaveStartID = 1
@@ -920,9 +1034,7 @@ EndFunction
 
 bool Function IsRestrained(actor npc) ; returns true if the npc has on some devious devices
 	return npc.WornHasKeyword(Keyword.GetKeyword("zbfWornDevice")) ;zaz devices
-
 EndFunction
-
 
 function enslave(actor slave)
 
@@ -1032,6 +1144,7 @@ function SetMaster(actor master)
 	resetSlaveAIs()
 	debug.Notification("Set new slave master")
 endfunction
+
 actor function TryFindRapeTarget(actor rapist) ; returns none if no target found
 	; this function finds a single random target, running it again and again may give different results.
 
@@ -1103,8 +1216,6 @@ bool function OpenAcceptMenu(actor npc)
 EndFunction
 
 Function OpenNpcMenu(actor npc) 
-
-
 	npc.AddToFaction(SuccubusDialogueFaction)
 	bool movingNPC = false
 	bool femalePlayer = appearsFemale(playerref)
@@ -1347,6 +1458,8 @@ Function OpenNpcMenu(actor npc)
 
 endfunction
 
+; Old ORomance code?
+
 bool function isProstitute(actor npc)
 	return npc.IsInFaction(jobInnServer) || npc.IsInFaction(FavorJobsBeggarFaction) || npc.IsInFaction(MarkarthTempleofDibellaFaction)
 EndFunction
@@ -1368,8 +1481,6 @@ int Function GetNPCOffer(actor npc, int playersv, int npcsv)
 	return ret
 
 endfunction
-
-
 
 int function GetNPCWealth(actor npc) ;0 - poor | 1 - wealthy | 2 - normal |
 	armor clothing = npc.GetWornForm(0x00000004) as Armor
@@ -1713,8 +1824,7 @@ float Function GetCurrentHourOfDay() global
  
 EndFunction
 
-int function GetNPCPrudishness(actor npc) ;0, whore - 10, prude
-	
+int function GetNPCPrudishness(actor npc) ;0, whore - 10, prude	
 	if !npc.IsInFaction(succubusprude)
 		npc.AddToFaction(succubusprude)
 		npc.SetFactionRank(succubusprude, Utility.RandomInt(0, 10))
@@ -1778,8 +1888,6 @@ function SetAsFollower(actor npc, bool set) ; follower in literal sense, not com
 		PlayerFollowPartner = none
 	endif
 EndFunction
-
-
 
 Function StripNPC(actor npc)
 	
@@ -1892,18 +2000,6 @@ function AddToFollowers(actor follower)
 	eff.XFL_SetSandbox(follower)
 EndFunction
 
-bool function isFemale(actor acto)
-	if SexLab.GetGender(acto) == 0
-		return False
-	else 
-		return true
-	endif
-EndFunction
-
-bool function appearsFemale(actor acto) ;may fail to spot some trans leveled actors, those actors will get "appears male"
-	return (isFemale(acto) || (acto.getleveledactorbase().getsex() == 1))
-endfunction
-
 bool function isTrans(actor acto) 
 	if appearsFemale(acto) && (!isFemale(acto))
 		return true
@@ -1925,8 +2021,6 @@ function TrackCombatRape(actor attacker, actor victim)
 		Return 
 	endif
 
-	
-	
 	trackingNPCCombat = true
 
 	float healthThreshold = 1
@@ -1972,7 +2066,6 @@ endfunction
 Function NPCRape(actor attacker, actor victim, bool forceCombatMode = false)
 	bool victimInCombat = (forceCombatMode) || (victim.IsInCombat())
 
-	
 	int minDistance = 196 ; about 9 feet
 
 	float distances = attacker.GetDistance(victim)
@@ -1980,9 +2073,6 @@ Function NPCRape(actor attacker, actor victim, bool forceCombatMode = false)
 	if victimInCombat
 		Calm(victim)
 	endif
-
-	
-
 	if (distances > minDistance)
 		
 		bool arrived 
@@ -2006,9 +2096,6 @@ Function NPCRape(actor attacker, actor victim, bool forceCombatMode = false)
 			Return
 		EndIf
 	endif
-
-	
-
 
 	bountySet = false
 	targetHasCrimeFaction = victim.GetCrimeFaction() as Bool
@@ -2128,14 +2215,11 @@ endfunction
 
 function toggleCombat() ;huge hack
 	ConsoleUtil.ExecuteCommand("tcai")
-
 endfunction
-
 
 function playerAttackFailedEvent(actor attacker) ;called when player loses a rape event to an attacker
 	doSex(attacker, playerref, true, isFemale(attacker)) ; player lost, will now be raped
 EndFunction
-
 
 function strip(form item, actor target, bool doImpulse = true)
 	if item
@@ -2156,16 +2240,14 @@ EndFunction
 
 
 function doOStim(actor actor1, actor actor2, int tags, bool aggressive = false) 
-;Debug.Notification("sex")
+	;Debug.Notification("sex")
 	if actor2.IsDead(); catches certain edge cases during combat
 		Return
 	endif
  
 	bool recog  = false
 
-	
 	spellTimer = 30	
-
 
 	bool requireUndress = true
 	string startingAnim = ""
@@ -2194,7 +2276,6 @@ function doOStim(actor actor1, actor actor2, int tags, bool aggressive = false)
 			requireUndress = false
 		endif
 	endif
-
 
 	bool playerInvolved = (actor1 == playerref) || (actor2 == playerref)
 	
@@ -2227,12 +2308,8 @@ function doOStim(actor actor1, actor actor2, int tags, bool aggressive = false)
 		
 	endif
 	
-
-
 	while ostim.animationRunning()
 		Utility.wait(1.1)
-
-	
 
 		if transPlayer && !PartnerKnowsTrueGenderAtStart
 			Utility.wait(2)
@@ -2296,8 +2373,6 @@ Function doSex(actor actor1, actor actor2, bool aggressive = false, bool femDom 
 
 
 	sslThreadModel Thread = Sexlab.NewThread()
-
-
 
 	spellTimer = 30	
 
@@ -2468,10 +2543,6 @@ Function doSex(actor actor1, actor actor2, bool aggressive = false, bool femDom 
 
 endfunction
 
-
-
-
-
 Function cycleDone()
 	cycleCount += 10
 	if playersuccubustrackingscriptmale.chanceRoll(33)
@@ -2504,8 +2575,6 @@ Function cycleDone()
 				damaged.damageav("health", damage)
 			endif
 			FXMeleePunchMediumS.Play(damaged)
-
-		
 	endif
 endfunction
 
@@ -2518,8 +2587,6 @@ bool Function CanSex(actor target)
 	else
 		return false
 	endif
-
-
 endfunction
 
 bool function isHeadConcealed(actor target)
@@ -2528,8 +2595,6 @@ endfunction
 
 bool function AttemptActorRecog(actor viewer, actor viewed)
 	int rank = viewer.GetRelationShipRank(viewed)
-
-
 	if !isHeadConcealed(viewed)
 		return true
 	endif
@@ -2552,7 +2617,6 @@ bool function AttemptActorRecog(actor viewer, actor viewed)
 
 endfunction
 
-
 function OnSeePlayerNaked(actor npc)
 	console("Player spotted")
 
@@ -2564,139 +2628,12 @@ function OnSeePlayerNaked(actor npc)
 
 endfunction
 
-
-
-
-Bool Function Trauma(Actor Target,  Bool Enter = True) 
-
-	if target.IsDead() 
-		Return  false
-	endif
-	if Target == playerref
-		return false
-	endif
-
-	If Enter
-			if isEnslaved(target)
-				Return False
-			endif
-			Calm(Target)
-;			StayStill(Target)
-;			Target.SetRestrained()
-;			Target.SetDontMove()
-			
-			;StateDuration = Duration
-			;Target.addspell(SuccubusTraumaSpell)
-
-			if !Target.HasMagicEffect(succubusTraumaSpell.GetNthEffectMagicEffect(0))		
-				SuccubusTraumaSpell.cast(Target)
-			endif
-				;Perpetrator = Aggressor
-			;SetStringValue(Target, "DefeatState", "Trauma")
-			;SetStringValue(Target, "DefeatType", Type)
-			;SetStringValue(Target, "DefeatStateAnim", "IdleWounded_03")
-			;Target.AddSpell(TraumaSPL)
-			;Target.SetPlayerTeammate(true)
-			Target.EvaluatePackage()
-			Debug.SendAnimationEvent(Target, "IdleWounded_02")
-			Utility.wait(1)
-
-
-
-;				If (i == 0)
-;					SetStringValue(Target, "DefeatStateAnim", "DefeatEstrusTrauma")
-;					SendAnimationEvent(Target, "DefeatEstrusTrauma")
-				
-			;		SetStringValue(Target, "DefeatStateAnim", "IdleWounded_02")
-
-			
-			int Tries = 3
-			float X
-			float newX
-
-			X = Target.X
-
-			while Tries != 0
-				Utility.wait(1)
-
-				newX = Target.X
-
-				if newX == X
-					Tries = 0
-				Else
-					;debug.Notification("Trauma failed")
-					Debug.SendAnimationEvent(Target, "IdleWounded_02")
-					X = newX
-					tries -= 1
-				endif
-					
-			endwhile
-
-		
-
-			Return True
-		
-	Else
-		;If Target.HasSpell(TraumaSPL)
-			;UnsetStringValue(Target, "DefeatStateAnim")
-		;	If UnCalm
-				;target.SetPlayerTeammate(false, false)
-
-				Debug.SendAnimationEvent(Target, "DefeatTraumaExit")
-				Calm(Target, Enter = False)
-		;	Endif
-;			StayStill(Target, False)
-;			Target.SetRestrained(False)
-;			Target.SetDontMove(False)
-			;UnsetStringValue(Target, "DefeatState")
-			;UnSetStringValue(Target, "DefeatType")
-		;	Target.RemoveSpell(TraumaSPL)
-			Return True
-		;Endif
-	Endif
-	Return False
-EndFunction
-
-Bool Function Calm(Actor Target, Bool StayPut = True, Bool Enter = True) 
-	If Enter
-		If !Target.IsInFaction(CalmFaction)
-			;Target.AddSpell(TrueCalmSPL)
-			Target.AddToFaction(CalmFaction)
-			Target.StopCombat()
-			Target.StopCombatAlarm()
-			If StayPut
-				ActorUtil.AddPackageOverride(Target, DoNothing, 100, 1)
-				Target.EvaluatePackage()
-				;target.SetDontMove(true)
-			Endif
-			Return True
-		Else
-			Target.StopCombatAlarm()
-		Endif
-	Else
-		;If Target.HasSpell(TrueCalmSPL)
-			Target.RemoveFromFaction(CalmFaction)
-			;target.SetDontMove(false)
-			If StayPut
-				ActorUtil.RemovePackageOverride(Target, DoNothing)
-				Target.EvaluatePackage()
-			Endif
-			;Target.RemoveSpell(TrueCalmSPL)
-			Return True
-		;Endif
-	Endif
-	Return False
-EndFunction
-
-
-
+; This seems like an old version of Ostim Animated redress
 Function PickUpThings(actor target, ObjectReference[] items)
 	int i = 0
-
 	if target.IsDead() || isEnslaved(target)
 		Return
 	endif
-
 	while i < items.Length
 		
 		if items[i]
@@ -2713,8 +2650,6 @@ Function PickUpThings(actor target, ObjectReference[] items)
 EndFunction
 
 Function AttemptReportRape(actor guard)
-		
-
 	;if Aactor != playerref
 	;	Return
 	;EndIf
@@ -2727,7 +2662,6 @@ Function AttemptReportRape(actor guard)
 EndFunction
 
 Function AttemptReportNudity(actor guard)
-	
 	float time = Utility.GetCurrentGameTime()
 
 	if ( time - lastNudityReport) > 0.25
@@ -2739,8 +2673,6 @@ Function AttemptReportNudity(actor guard)
 EndFunction
 
 Function AddBounty(int amount, Faction crimeFaction, bool silent = false, bool violent = true)
-
-
 	crimeFaction.ModCrimeGold(amount, violent)
 
 
@@ -2750,10 +2682,7 @@ Function AddBounty(int amount, Faction crimeFaction, bool silent = false, bool v
 
 EndFunction
 
-
-
 function saveNPCData(actor npc) 
-	
 	if !SuccubusProcessedNPCs.HasForm(npc as form)
 		SuccubusProcessedNPCs.AddForm(npc as form)
 	endif
@@ -2793,9 +2722,6 @@ endfunction
 function clearNPCOverrides(actor npc)
 	NiOverride.RemoveAllReferenceNodeOverrides(npc); pubes, etc
 	NiOverride.ClearMorphs(npc) ; bodygen?
-
-
-
 	npc.RemoveFromFaction(succubusprocessed)
 	;SuccubusProcessedNPCs.RemoveAddedForm(npc as form)
 EndFunction
@@ -2835,6 +2761,7 @@ function openDataMenu()
 	endif
 EndFunction
 
+; Oromance stuff again.
 int function openSexActMenu(actor act)
 	UIMenuBase wheelMenu = UIExtensions.GetMenu("UIWheelMenu")
 	Int exit = 7
@@ -3012,14 +2939,15 @@ int function NPCDesiresPlayerGender(actor npc)
 
 endfunction
 
+; Lol
 int function GetGayness(actor npc)
-; 1 - homophobic
-; 2 - Straight, Has sex with other sex only
-; 3 - mostly Straight, Has sex with other sex and trans that match other sex's appearance
-; 4 - pansexual, sex with all
-; 5 - mostly gay/lesbian, only has sex with same gender and trans that match their sex's appearance
-; 6 - gay/lesbian, has sex with same sex only
-; 7 - heterophobic
+	; 1 - homophobic
+	; 2 - Straight, Has sex with other sex only
+	; 3 - mostly Straight, Has sex with other sex and trans that match other sex's appearance
+	; 4 - pansexual, sex with all
+	; 5 - mostly gay/lesbian, only has sex with same gender and trans that match their sex's appearance
+	; 6 - gay/lesbian, has sex with same sex only
+	; 7 - heterophobic
 
 	int gayness = GetNPCDataInt(npc, "gayness")
 
@@ -3081,6 +3009,7 @@ float function GetNPCLastProstTime(actor npc)
 	return GetNPCDataFloat(npc, "LastSexBuyTime")
 EndFunction
 
+; NEM: Don't like this, will probably yeet it.
 function SetNPCKnowsPlayerSex(actor npc, bool knows) ;for trans/futa characters only.
 	int num
 	if knows
@@ -3090,7 +3019,7 @@ function SetNPCKnowsPlayerSex(actor npc, bool knows) ;for trans/futa characters 
 	endif
 	StoreNPCDataInt(npc, "KnowsPlayerGender", num)
 endfunction
-
+; NEM: This too.
 bool function GetNPCKnowsPlayerSex(actor npc)
 	if GetNPCDataInt(npc, "KnowsPlayerGender") < 1
 		return False
@@ -3099,12 +3028,14 @@ bool function GetNPCKnowsPlayerSex(actor npc)
 	endif
 endfunction
 
+; NEM: Build a new function for this.
 function console(string in) global
 	;MiscUtil.PrintConsole("-----------------------------")
 	;MiscUtil.PrintConsole("DS: " + in)
 	;MiscUtil.PrintConsole("-----------------------------")
 EndFunction
 
+; NEM: Use JContainers JDB for this instead.
 function StoreNPCDataFloat(actor npc, string keys, float num)
 	StorageUtil.SetFloatValue(npc as form, keys, num)
 	console("Set value " + num + " for key " + keys)
@@ -3123,8 +3054,4 @@ int function GetNPCDataInt(actor npc, string keys)
 	return StorageUtil.GetIntValue(npc, keys, -1)
 EndFunction
 
-;bugs
 
-;enemies have idle dialogue when trauma'd
-;enemies can sometimes fall through the ground after a trauma duel is lost and they are impulsed
-;occasionally the armor piece is not ripped off during a duel

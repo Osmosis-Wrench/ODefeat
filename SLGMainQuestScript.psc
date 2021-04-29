@@ -118,7 +118,6 @@ function Startup(SuccubusGameBar barinput)
 	RegisterForKey(54) ;rightshift
 	RegisterForKey(57) ;space
 	RegisterForKey(37) ;K
-
 	RegisterForKey(207)  ; END
 
 	Apex = SuccubusQuest as succubusapexscript
@@ -186,8 +185,6 @@ EndFunction
 
 ; When G is pressed, it will try to call AttemptAttack
 Event onKeyDown(int keyn)
-	
-
 	if Utility.IsInMenuMode()
 		Return
 	EndIf
@@ -211,7 +208,6 @@ Event onKeyDown(int keyn)
 				StripNPC(npc)
 			endif
 		elseif (ref.GetBaseObject() as weapon) || (ref.GetBaseObject() as armor)
-			
 			playerref.AddItem(ref, abSilent = true)
 			playerref.equipitem(ref.GetBaseObject())
 		endif
@@ -222,8 +218,6 @@ Event onKeyDown(int keyn)
 	endif
 
 	if keyn == 37 ;K
-
-
 		;actor target = GetPlayerTalkPartner()
 		actor target = Game.GetCurrentCrosshairRef() as actor
 
@@ -363,15 +357,15 @@ Function AttemptAttack(actor attacker, actor victim)
 			if playerattacker
 				if stripStage == 0 && attackStatus >= 20 ; helmet
 					strip(victim.GetWornForm(0x00000002), victim)
-				elseif stripStage == 1 && attackStatus >= 40 ;gauntlet
+				elseif stripStage == 1 && attackStatus >= 40 ; gauntlet
 					strip(victim.GetWornForm(0x00000008), victim)
-				elseif stripStage == 2 && attackStatus >= 60 ;feet
+				elseif stripStage == 2 && attackStatus >= 60 ; feet
 					strip(victim.GetWornForm(0x00000080), victim)
-				elseif stripStage == 3 && attackStatus >= 80 ;left hand
+				elseif stripStage == 3 && attackStatus >= 80 ; left hand
 					strip(victim.GetEquippedObject(0) as form, victim)
-				elseif stripStage == 4  && attackStatus >= 90;right hand
+				elseif stripStage == 4  && attackStatus >= 90 ; right hand
 					strip(victim.GetEquippedObject(1) as form, victim) 
-				elseif stripStage == 5  && attackStatus >= 95 ;armor!
+				elseif stripStage == 5  && attackStatus >= 95 ; armor
 					strip(victim.GetWornForm(0x00000004), victim)
 				endif
 			else
@@ -676,7 +670,6 @@ function ResetAttackState() ;run this if stuck
 	PlayerFollowPartner = none
 	debug.MessageBox("State Reset")
 EndFunction
-
 
 actor Function GetPlayerTalkPartner()
 	if talker.IsInDialogueWithPlayer()

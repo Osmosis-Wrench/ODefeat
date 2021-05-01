@@ -2932,7 +2932,7 @@ int function NPCDesiresPlayerGender(actor npc)
 
 endfunction
 
-; Lol
+; Nem: Lol
 int function GetGayness(actor npc)
 	; 1 - homophobic
 	; 2 - Straight, Has sex with other sex only
@@ -2994,6 +2994,7 @@ function setGayness(actor npc)
 
 	StoreNPCDataInt(npc, "gayness", gay)
 endfunction
+
 function SetNPCLastProstTime(actor npc) ;sets to current time
 	StoreNPCDataFloat(npc, "LastSexBuyTime", Utility.GetCurrentGameTime())
 EndFunction

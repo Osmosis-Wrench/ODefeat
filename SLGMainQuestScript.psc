@@ -394,7 +394,7 @@ Function AttemptAttack(actor attacker, actor victim)
 	cycleCount = 0
 	nextKey = 0
 	
-	;NEM: If you win tacke, this triggers.
+	;NEM: If you win tackle, this triggers.
 	if victory
 		StruggleAnim(victim, attacker, false, true)
 		
@@ -869,11 +869,6 @@ Bool Function Calm(Actor Target, Bool StayPut = True, Bool Enter = True)
 	Endif
 	Return False
 EndFunction
-; Succ mod code:
-
-; Follower code:
-
-; Slavery mod code:
 
 int SlaveMasterID = 0
 int SlaveStartID = 1

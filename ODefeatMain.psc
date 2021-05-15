@@ -1,9 +1,15 @@
 Scriptname ODefeatMain extends Quest  
 Actor Property PlayerRef Auto  
-ODefeatMCM Property ODefeatMCM Auto
+ODefeatMCM Property ODefMCM Auto
 OsexIntegrationMain Property Ostim Auto
 
 ObjectReference[] property droppedItems auto
+int stripStage
+Float attackStatus
+bool attackComplete
+bool attackRunning
+
+int warmupTime
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -49,7 +55,7 @@ Function attemptAttack(Actor attacker, actor victim)
     if (isValidAttackTarget(victim) || AttackRunning)
         return
     endif
-
+    bool PlayerAttacker
     if (attacker == PlayerRef)
         PlayerAttacker = True
     Else
@@ -58,16 +64,16 @@ Function attemptAttack(Actor attacker, actor victim)
 
     attacker.SheatheWeapon()
     victim.SheatheWeapon()
-    victimHasCrimeFaction = victim.GetCrimeFaction() as bool
+    bool victimHasCrimeFaction = victim.GetCrimeFaction() as bool ;I think I can remove this.
     warmupTime = 20
 
     ;Setup Bar percents, also need to investigate bars.
     if (PlayerAttacker)
-        float difficulty = getActorAttackDificulty(victim)
+        float difficulty = getActorAttackDifficulty(victim)
         bar.setPercent(0.05)
         AttackStatus = 5.0
     Else
-        float difficulty = getActorAttackDificulty(attacker)
+        float difficulty = getActorAttackDifficulty(attacker)
         bar.setPercent(0.80)
         AttackStatus = 80.0
         PlayerRef.SetDontMove(True)
@@ -75,13 +81,14 @@ Function attemptAttack(Actor attacker, actor victim)
     EndIf
 
     attackComplete = False
-
+    int cycleCount = 0
+    
     while (!attackComplete)
-        if (warmup > 0) ; A little bit of time at the begining for getting ready.
+        if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
             if (cycleCount > 0)
-                warmup = 0
+                warmupTime = 0
             else
-                warmup -= 1
+                warmupTime -= 1
             endif
         else ; do the main minigame loop.
             if (attackStatus <= 0) ; If attackStatus bar is empty, exit loop.
@@ -102,32 +109,32 @@ Function attemptAttack(Actor attacker, actor victim)
             bar.SetPercent(attackStatus / 100.0)
             
             ; I want to put all this in a simple function, rather than have this mess. Maybe work out a way to generate this dynamically.
-            If PlayerAttacker 
-                if     (stripStage 0 == && attackStatus >= 20) ; helmet
+            If (PlayerAttacker)
+                if     (stripStage == 0 && attackStatus >= 20) ; helmet
                     StripItem(Victim, victim.GetWornForm(0x00000002))
-                elseif (stripStage 1 == && attackStatus >= 40) ; gauntlet
+                elseif (stripStage == 1 && attackStatus >= 40) ; gauntlet
                     StripItem(Victim, victim.GetWornForm(0x00000008))
-                elseif (stripStage 2 == && attackStatus >= 60) ; feet
-                    StripItem(Victim, victim.GetWornForm(0x00000080)
-                elseif (stripStage 3 == && attackStatus >= 80) ; left hand
+                elseif (stripStage == 2 && attackStatus >= 60) ; feet
+                    StripItem(Victim, victim.GetWornForm(0x00000080))
+                elseif (stripStage == 3 && attackStatus >= 80) ; left hand
                     StripItem(Victim, victim.GetEquippedObject(0) as form)
-                elseif (stripStage 4 == && attackStatus >= 90) ; right hand
+                elseif (stripStage == 4 && attackStatus >= 90) ; right hand
                     StripItem(Victim, victim.GetEquippedObject(1) as form)
-                elseif (stripStage 5 == && attackStatus >= 95) ; armor
+                elseif (stripStage == 5 && attackStatus >= 95) ; armor
                     StripItem(Victim, victim.GetWornForm(0x00000004))
                 endif
             Else
-                if     (stripStage 0 == && attackStatus >= 84) ; helmet
+                if     (stripStage == 0 && attackStatus >= 84) ; helmet
                     StripItem(Victim, victim.GetWornForm(0x00000002))
-                elseif (stripStage 1 == && attackStatus >= 87) ; gauntlet
+                elseif (stripStage == 1 && attackStatus >= 87) ; gauntlet
                     StripItem(Victim, victim.GetWornForm(0x00000008))
-                elseif (stripStage 2 == && attackStatus >= 91) ; feet
-                    StripItem(Victim, victim.GetWornForm(0x00000080)
-                elseif (stripStage 3 == && attackStatus >= 94) ; left hand
+                elseif (stripStage == 2 && attackStatus >= 91) ; feet
+                    StripItem(Victim, victim.GetWornForm(0x00000080))
+                elseif (stripStage == 3 && attackStatus >= 94) ; left hand
                     StripItem(Victim, victim.GetEquippedObject(0) as form)
-                elseif (stripStage 4 == && attackStatus >= 96) ; right hand
+                elseif (stripStage == 4 && attackStatus >= 96) ; right hand
                     StripItem(Victim, victim.GetEquippedObject(1) as form)
-                elseif (stripStage 5 == && attackStatus >= 98) ; armor
+                elseif (stripStage == 5 && attackStatus >= 98) ; armor
                     StripItem(Victim, victim.GetWornForm(0x00000004))
                 endif
             EndIf
@@ -171,11 +178,11 @@ Function attemptAttack(Actor attacker, actor victim)
     endIf
 EndFunction
 
-Function struggleDontMove(actor attacker, actor victim, bool PlayerAttacker, bool state)
+Function struggleDontMove(actor attacker, actor victim, bool PlayerAttacker, bool moveEnabled)
     if (PlayerAttacker)
-        victim.SetDontMove(state)
+        victim.SetDontMove(moveEnabled)
     else
-        attacker.SetDontMove(state)
+        attacker.SetDontMove(moveEnabled)
     endif
 endFunction
 
@@ -316,7 +323,7 @@ Bool Function doTrauma(Actor target, bool enter = true)
         while (Tries != 0)
             Utility.Wait(1)
             newX = Target.X
-            if (newX = X)
+            if (newX == X)
                 Tries = 0
             Else
                 Debug.SendAnimationEvent(Target, "IdleWounded_02")
@@ -370,51 +377,82 @@ Bool Function isValidAttackTarget(actor target)
     return false
 endFunction
 
-Float Function getActorAttackDificulty(actor target)
-    ; Return a float of the dificulty of the attack minigame, based off the actor pased in.
-    float ret = 1.0
-    return ret
-endFunction
-
 Function stripActor(Actor target)
     form chest = target.GetWornForm(0x00000004)
-
 	if (chest)
-		strip(chest, target, false)
+		stripItem(target, chest, false)
 		Return 
 	endif
-
 	form helmet = target.GetWornForm(0x00000002)
-
 	if (helmet)
-		strip(helmet, target, false)
+		stripItem(target, helmet, false)
 		Return 
 	endif
-
 	form boots = target.GetWornForm(0x00000080)
-
 	if (boots)
-		strip(boots, target, false)
+		stripItem(target, boots, false)
 		Return 
 	endif
-
 	form hands = target.GetWornForm(0x00000008)
-
 	if (hands)
-		strip(hands, target, false)
+		stripItem(target, hands, false)
 		Return 
 	endif
 EndFunction
 
-Function stripItem(actor target, string item, bool doImpulse = true)
+Function stripItem(actor target, form item, bool doImpulse = true)
     ; Strip a specific item from an actor.
     if (item)
         objectreference droppedItem = target.dropObject(item)
         droppedItem.SetPosition(DroppedItem.GetPositionX(), DroppedItem.GetPositiony(), DroppedItem.GetPositionz() + 64)
         if (doImpulse)
-            droppedItem.applyHavokImpulse(Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(0.2, 1.8), Utility.RandomFloat(10, 50)
+            droppedItem.applyHavokImpulse(Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(0.2, 1.8), Utility.RandomFloat(10, 50))
         endif
         droppedItems[stripStage] = DroppedItem
     endif
     stripStage += 1
 endFunction
+
+Float Function getActorAttackDifficulty(actor target)
+    ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.
+    float ret = 0
+    float levelRatio = ((target.GetLevel() as Float)/(playerref.GetLevel() as Float)) * 100
+    if (levelRatio > 140)
+        ret = 10.0
+    elseif (levelRatio > 125)
+        ret = 9.0
+    elseif (levelRatio > 100)
+        ret = 8.0
+    elseif (levelRatio > 70)
+        ret = 7.5
+    elseif (levelRatio > 35)
+        ret = 6.5
+    endif
+    if (target.IsBleedingOut())
+        ret -= 7.5
+    else
+        ret -= ((100.0 - (target.GetActorValuePercentage("Health") * 100)) / 40.0)
+    endif
+    if (!playerRef.IsDetectedBy(target))
+        ret -= 1.0
+    endif
+    if (!target.IsInCombat())
+        ret -= 1.0
+    endif
+    if target.GetSleepState() == 3
+		ret -= 1
+	endif
+    if (ret < 5.0)
+        ret = 5.0
+    endif
+    return ret
+endFunction
+
+; This just makes life easier sometimes.
+Function WriteLog(String OutputLog, bool error = false)
+    MiscUtil.PrintConsole("OStrap: " + OutputLog)
+    Debug.Trace("OStrap: " + OutputLog)
+    if (error == true)
+        Debug.Notification("Ostrap: " + OutputLog)
+    endIF
+EndFunction

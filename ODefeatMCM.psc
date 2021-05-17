@@ -4,7 +4,7 @@ Event OnConfigInit()
     ; Stuff
 endEvent
 
-Event OnPageReset()
+Event OnPageReset(string a_page)
     ;Stuff
 EndEvent
 

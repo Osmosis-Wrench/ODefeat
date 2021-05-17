@@ -4,10 +4,16 @@ ODefeatMCM Property ODefMCM Auto
 OsexIntegrationMain Property Ostim Auto
 
 ObjectReference[] property droppedItems auto
+faction property calmFaction auto
+Package Property DoNothing Auto
+Sound property FXMeleePunchLargeS auto
+
+ObjectReference posref
 int stripStage
 Float attackStatus
 bool attackComplete
 bool attackRunning
+Osexbar defeatBar
 
 int warmupTime
 
@@ -31,6 +37,9 @@ Function startup()
     attackStatus = 0 ; What do the other numbers mean?
     attackComplete = False ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
+
+    defeatBar = (Self as Quest) as Osexbar
+    InitBar(defeatBar)
 EndFunction
 
 Event onKeyDown(int keyCode)
@@ -41,6 +50,27 @@ Event onKeyDown(int keyCode)
         attackKeyHandler()
     EndIf
 EndEvent
+
+Function InitBar(OSexBar setupBar)
+    setupBar.HAnchor = "center"
+    setupBar.VAnchor = "middle"
+    setupBar.Alpha = 0.0
+    setupBar.SetPercent(50.0)
+    setupBar.FillDirection = "left"
+    setupBar.SetColors(0xFE1B61, 0xB0B0B0)
+
+    SetBarVisible(setupBar, False)
+endFunction
+
+Function SetBarVisible(Osexbar setupBar, Bool Visible)
+	If (Visible)
+		setupBar.FadeTo(100.0, 1.0)
+		setupBar.FadedOut = False
+	Else
+		setupBar.FadeTo(0.0, 1.0)
+		setupBar.FadedOut = True
+	EndIf
+EndFunction
 
 ;  ███╗   ███╗ █████╗ ██╗███╗   ██╗
 ;  ████╗ ████║██╔══██╗██║████╗  ██║
@@ -64,17 +94,18 @@ Function attemptAttack(Actor attacker, actor victim)
 
     attacker.SheatheWeapon()
     victim.SheatheWeapon()
+    float difficulty
     bool victimHasCrimeFaction = victim.GetCrimeFaction() as bool ;I think I can remove this.
     warmupTime = 20
 
     ;Setup Bar percents, also need to investigate bars.
     if (PlayerAttacker)
-        float difficulty = getActorAttackDifficulty(victim)
-        bar.setPercent(0.05)
+        difficulty = getActorAttackDifficulty(victim)
+        defeatBar.setPercent(0.05)
         AttackStatus = 5.0
     Else
-        float difficulty = getActorAttackDifficulty(attacker)
-        bar.setPercent(0.80)
+        difficulty = getActorAttackDifficulty(attacker)
+        defeatBar.setPercent(0.80)
         AttackStatus = 80.0
         PlayerRef.SetDontMove(True)
         ToggleCombat()
@@ -82,6 +113,7 @@ Function attemptAttack(Actor attacker, actor victim)
 
     attackComplete = False
     int cycleCount = 0
+    bool victory
     
     while (!attackComplete)
         if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
@@ -103,10 +135,10 @@ Function attemptAttack(Actor attacker, actor victim)
             if (PlayerAttacker)
                 attackStatus += cycleCount - difficulty
             else
-                attackStatus -= cylceCount - difficulty
+                attackStatus -= cycleCount - difficulty
             endif
 
-            bar.SetPercent(attackStatus / 100.0)
+            defeatBar.SetPercent(attackStatus / 100.0)
             
             ; I want to put all this in a simple function, rather than have this mess. Maybe work out a way to generate this dynamically.
             If (PlayerAttacker)
@@ -147,8 +179,8 @@ Function attemptAttack(Actor attacker, actor victim)
         runStruggleAnim(attacker, victim, false, true)
         StruggleDontMove(attacker, victim, playerattacker, true)
         if (PlayerAttacker)
-            if ActorIsHelpless(victim)
-                Ostim.StartScene(attacker, victim, agressive = true)
+            if isActorHelpless(victim)
+                Ostim.StartScene(attacker, victim, Aggressive = True, AggressingActor = attacker)
             else
                 doTrauma(victim)
             endif
@@ -196,7 +228,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         ; For now I'll use old code.
 
         if (attacker == PlayerRef) ; Move scene to the location of the player.
-            (posRef).MoveTo(Agressor)
+            (posRef).MoveTo(attacker)
         else
             (posRef).MoveTo(Victim)
         endif
@@ -209,7 +241,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
 		CenterLocation[4] = posref.GetAngleY()
 		CenterLocation[5] = posref.GetAngleZ()
 
-        if (Attacker == PlayerRef) ; place and align agressor
+        if (Attacker == PlayerRef) ; place and align attacker
             CenterLocation[3] = 21 ; I think this is to align the actors to the same angle?
             CenterLocation[4] = 0
             CenterLocation[5] = 240
@@ -232,7 +264,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
 
         ; Start Struggle anim.
         Debug.SendAnimationEvent(Victim, "Leito_nc_missionary_A1_S1")
-        Debug.SendAnimationEvent(Aggressor, "Leito_nc_missionary_A2_S1")
+        Debug.SendAnimationEvent(Attacker, "Leito_nc_missionary_A2_S1")
 
     else
         struggleActorPreventMove(attacker, false)
@@ -270,6 +302,10 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
     endif
 EndFunction
 
+Function playerAttackFailedEvent(actor Act)
+    Ostim.StartScene(act, playerRef, Aggressive = True, AggressingActor = act)
+endFunction
+
 ; ██╗  ██╗███████╗██╗   ██╗██████╗ ██╗███╗   ██╗██████╗ ███████╗
 ; ██║ ██╔╝██╔════╝╚██╗ ██╔╝██╔══██╗██║████╗  ██║██╔══██╗██╔════╝
 ; █████╔╝ █████╗   ╚████╔╝ ██████╔╝██║██╔██╗ ██║██║  ██║███████╗
@@ -306,7 +342,7 @@ Function toggleCombat()
 EndFunction
 
 Bool Function doTrauma(Actor target, bool enter = true)
-    if (target.IsDead || Target == PlayerRef)
+    if (target.IsDead() || Target == PlayerRef)
         return false
     endif
     doCalm(target)
@@ -346,7 +382,7 @@ Bool Function doCalm(Actor target, bool dontMove = true, bool enter = true)
             Target.AddToFaction(CalmFaction)
             Target.StopCombat()
             Target.StopCombatAlarm()
-            if (StayPut)
+            if (dontMove)
                 ActorUtil.AddPackageOverride(Target, DoNothing, 100, 1)
                 Target.EvaluatePackage()
             endif
@@ -356,7 +392,7 @@ Bool Function doCalm(Actor target, bool dontMove = true, bool enter = true)
         endif
     else
         Target.RemoveFromFaction(CalmFaction)
-        if (StayPut)
+        if (dontMove)
             ActorUtil.RemovePackageOverride(Target, DoNothing)
             Target.EvaluatePackage()
         endif
@@ -375,6 +411,10 @@ Bool Function isValidAttackTarget(actor target)
         EndIf
     EndIf
     return false
+endFunction
+
+Bool Function isActorHelpless(actor target)
+    return true
 endFunction
 
 Function stripActor(Actor target)

@@ -148,6 +148,7 @@ Function attemptAttack(Actor attacker, actor victim)
     cycleCount = 0
     bool victory
     nextKey = 0
+    int difficultyCounter = 0
 
     defeatBar.FadeTo(100, 0.1)
 
@@ -177,6 +178,13 @@ Function attemptAttack(Actor attacker, actor victim)
             endif
 
             defeatBar.SetPercent(attackStatus / 100.0)
+            cycleCount = 0
+            difficultyCounter += 1
+
+            if difficultyCounter >= 50 ;boost difficulty if slow
+                difficulty +=1
+                difficultyCounter = 0
+            endif
             
             ; I want to put all this in a simple function, rather than have this mess. Maybe work out a way to generate this dynamically.
             If (PlayerAttacker)

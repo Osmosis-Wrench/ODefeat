@@ -40,6 +40,8 @@ Function startup()
 
     defeatBar = (Self as Quest) as Osexbar
     InitBar(defeatBar)
+
+    Debug.notification("ODefeat installed")
 EndFunction
 
 Event onKeyDown(int keyCode)

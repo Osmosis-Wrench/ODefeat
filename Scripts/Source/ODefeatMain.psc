@@ -84,7 +84,7 @@ EndFunction
 
 Function attemptAttack(Actor attacker, actor victim)
     ; Attempt to start attack minigame.
-    if (isValidAttackTarget(victim) || AttackRunning)
+    if (!isValidAttackTarget(victim) || AttackRunning)
         return
     endif
     bool PlayerAttacker

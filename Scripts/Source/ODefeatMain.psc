@@ -509,7 +509,7 @@ Bool Function isValidAttackTarget(actor target)
 endFunction
 
 Bool Function isActorHelpless(actor target)
-    return false
+    return target.HasMagicEffect(ODefeatMagicEffect)
 endFunction
 
 Function stripActor(Actor target)

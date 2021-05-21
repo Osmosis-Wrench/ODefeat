@@ -54,6 +54,8 @@ Function startup()
     defeatBar = (Self as Quest) as Osexbar
     InitBar(defeatBar)
 
+    posref = playerref.PlaceAtMe((Quest.GetQuest("0SA") as _oOmni).OBlankStatic) as ObjectReference
+
     Debug.notification("ODefeat installed")
 EndFunction
 

@@ -415,10 +415,6 @@ Function attackKeyHandler()
     endif
 EndFunction
 
-Function menuKeyHandler()
-    ;Stuff
-EndFunction
-
 
 ; ███╗   ███╗██╗███████╗ ██████╗
 ; ████╗ ████║██║██╔════╝██╔════╝
@@ -591,9 +587,9 @@ endFunction
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)
-    MiscUtil.PrintConsole("OStrap: " + OutputLog)
-    Debug.Trace("OStrap: " + OutputLog)
+    MiscUtil.PrintConsole("ODefeat: " + OutputLog)
+    Debug.Trace("ODefeat: " + OutputLog)
     if (error == true)
-        Debug.Notification("Ostrap: " + OutputLog)
+        Debug.Notification("ODefeat: " + OutputLog)
     endIF
 EndFunction

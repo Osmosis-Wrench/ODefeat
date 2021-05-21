@@ -10,6 +10,9 @@ Sound property FXMeleePunchLargeS auto
  
 Sound property FXMeleePunchMediumS auto ; TODO SET  - NOT SET YET
 
+Spell property ODefeatSpell auto 
+MagicEffect property ODefeatMagicEffect auto
+
 ObjectReference Property posref Auto
 int stripStage
 Float attackStatus
@@ -28,7 +31,7 @@ bool PlayerAttacker
 
 int warmupTime
 
-bool cheatMode = false
+bool cheatMode = true
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -439,6 +442,10 @@ Bool Function doTrauma(Actor target, bool enter = true)
         Target.EvaluatePackage() ; Why do we do this? We aren't applying any new packages.
         Debug.SendAnimationEvent(Target, "IdleWounded_02")
         Utility.Wait(1)
+
+        if !Target.HasMagicEffect(ODefeatMagicEffect)       
+                ODefeatSpell.cast(Target)
+        endif
 
         int Tries = 3
         float X

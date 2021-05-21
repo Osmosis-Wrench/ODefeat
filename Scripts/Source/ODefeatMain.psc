@@ -28,6 +28,8 @@ bool PlayerAttacker
 
 int warmupTime
 
+bool cheatMode = false
+
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
 ; ██║   ██║██║  ██║█████╗  █████╗  █████╗  ███████║   ██║   
@@ -182,7 +184,7 @@ Function attemptAttack(Actor attacker, actor victim)
             difficultyCounter += 1
 
             if difficultyCounter >= 50 ;boost difficulty if slow
-                difficulty +=1
+                difficulty += 1
                 difficultyCounter = 0
             endif
             
@@ -225,11 +227,7 @@ Function attemptAttack(Actor attacker, actor victim)
         runStruggleAnim(attacker, victim, false, true)
         StruggleDontMove(attacker, victim, playerattacker, true)
         if (PlayerAttacker)
-            if isActorHelpless(victim)
-                Ostim.StartScene(attacker, victim, Aggressive = True, AggressingActor = attacker)
-            else
-                doTrauma(victim)
-            endif
+            doTrauma(victim)
         else
             PlayerAttackFailedEvent(attacker)
         endif
@@ -386,8 +384,12 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
 EndFunction
 
 Function playerAttackFailedEvent(actor Act)
-    Ostim.StartScene(act, playerRef, Aggressive = True, AggressingActor = act)
+    StartScene(act, playerref)
 endFunction
+
+Function StartScene(actor Dom, actor Sub)
+    Ostim.StartScene(dom, sub, Aggressive = True, AggressingActor = dom)
+EndFunction
 
 ; ██╗  ██╗███████╗██╗   ██╗██████╗ ██╗███╗   ██╗██████╗ ███████╗
 ; ██║ ██╔╝██╔════╝╚██╗ ██╔╝██╔══██╗██║████╗  ██║██╔══██╗██╔════╝
@@ -400,7 +402,11 @@ endFunction
 Function attackKeyHandler()
     actor npc = Game.GetCurrentCrosshairRef() as Actor ; find out if there is a faster way to do this with properties.
     if (!npc.isDead())
-        attemptAttack(PlayerRef, NPC)
+        If isActorHelpless(npc)
+            StartScene(playerref, npc)
+        else
+            attemptAttack(PlayerRef, NPC)
+        endif
     else
         StripActor(npc)
     endif
@@ -497,7 +503,7 @@ Bool Function isValidAttackTarget(actor target)
 endFunction
 
 Bool Function isActorHelpless(actor target)
-    return true
+    return false
 endFunction
 
 Function stripActor(Actor target)
@@ -538,6 +544,11 @@ endFunction
 
 Float Function getActorAttackDifficulty(actor target)
     ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.
+
+    if cheatMode 
+        return 0
+    endif 
+
     float ret = 0
     float levelRatio = ((target.GetLevel() as Float)/(playerref.GetLevel() as Float)) * 100
     if (levelRatio > 140)

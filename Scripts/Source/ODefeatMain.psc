@@ -7,6 +7,8 @@ ObjectReference[] property droppedItems auto
 faction property calmFaction auto
 Package Property DoNothing Auto
 Sound property FXMeleePunchLargeS auto
+ 
+Sound property FXMeleePunchMediumS auto ; TODO SET  - NOT SET YET
 
 ObjectReference Property posref Auto
 int stripStage
@@ -14,6 +16,15 @@ Float attackStatus
 bool attackComplete
 bool attackRunning
 Osexbar defeatBar
+
+Actor AttackingActor
+Actor VictimActor
+
+int nextKey ; rename this?
+int cycleCount
+
+bool PlayerAttacker
+
 
 int warmupTime
 
@@ -32,6 +43,8 @@ EndFunction
 Function startup()
     ; Register for keypress events. I'm not sure what all of these do yet.
     RegisterForKey(34) ;G - attacks
+    RegisterForKey(42) ;leftshift - Minigame key 1
+    RegisterForKey(54) ;rightshift - Minigame key 2
 
     ; Attack status information.
     attackStatus = 0 ; What do the other numbers mean?
@@ -51,6 +64,18 @@ Event onKeyDown(int keyCode)
         ;Try to perform attack, or strip dead npc?
         attackKeyHandler()
     EndIf
+
+    if AttackRunning
+        if keyCode == 42 && nextKey == 0
+            nextKey = 1
+
+        elseif keyCode == 54 && nextKey == 1
+            nextKey = 0
+            cycleDone()
+        elseif keyCode == 57
+            cycleCount = -200
+        endif
+    endif
 EndEvent
 
 Function InitBar(OSexBar setupBar)
@@ -91,12 +116,12 @@ Function attemptAttack(Actor attacker, actor victim)
     if (!isValidAttackTarget(victim) || AttackRunning)
         return
     endif
-    bool PlayerAttacker
-    if (attacker == PlayerRef)
-        PlayerAttacker = True
-    Else
-        PlayerAttacker = false
-    endif
+    attackRunning = true 
+
+    AttackingActor = attacker 
+    VictimActor = victim 
+
+    PlayerAttacker = (attacker == PlayerRef) 
 
     attacker.SheatheWeapon()
     victim.SheatheWeapon()
@@ -118,8 +143,9 @@ Function attemptAttack(Actor attacker, actor victim)
     EndIf
 
     attackComplete = False
-    int cycleCount = 0
+    cycleCount = 0
     bool victory
+    nextKey = 0
 
     defeatBar.FadeTo(100, 0.1)
 
@@ -218,10 +244,47 @@ Function attemptAttack(Actor attacker, actor victim)
         Utility.Wait(2.0)
         toggleCombat()
     endIf
+
+    attackRunning = false
 EndFunction
 
-Function struggleDontMove(actor attacker, actor victim, bool PlayerAttacker, bool moveEnabled)
-    if (PlayerAttacker)
+Function cycleDone() 
+    cycleCount += 10
+    if ostim.chanceRoll(33)
+        Game.ShakeCamera(PlayerRef, afStrength = 1, afDuration = 0.3)
+
+        
+            actor damaged
+            int damage
+
+            if ostim.chanceRoll(66) ;this fucking shit makes no sense
+                damaged = attackingactor
+                damage = 1
+
+                if !PlayerAttacker
+                    Game.triggerscreenblood(1)
+                endif
+
+                
+            Else
+                damaged = VictimActor
+                damage = 2
+
+                if PlayerAttacker
+                    Game.triggerscreenblood(2)
+                endif
+
+        
+            endif
+            if damaged.GetActorValue("health") > 2
+                damaged.damageav("health", damage)
+            endif
+            FXMeleePunchMediumS.Play(damaged)
+    endif
+endfunction 
+
+Function struggleDontMove(actor attacker, actor victim, bool isPlayerAttacker, bool moveEnabled)
+    if (isPlayerAttacker)
         victim.SetDontMove(moveEnabled)
     else
         attacker.SetDontMove(moveEnabled)

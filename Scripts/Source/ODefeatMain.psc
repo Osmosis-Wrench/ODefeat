@@ -31,7 +31,7 @@ bool PlayerAttacker
 
 int warmupTime
 
-bool cheatMode = true
+bool cheatMode = false
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝

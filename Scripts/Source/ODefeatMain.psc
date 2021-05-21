@@ -8,7 +8,7 @@ faction property calmFaction auto
 Package Property DoNothing Auto
 Sound property FXMeleePunchLargeS auto
 
-ObjectReference posref
+ObjectReference Property posref Auto
 int stripStage
 Float attackStatus
 bool attackComplete
@@ -54,12 +54,16 @@ Event onKeyDown(int keyCode)
 EndEvent
 
 Function InitBar(OSexBar setupBar)
-    setupBar.HAnchor = "center"
-    setupBar.VAnchor = "middle"
-    setupBar.Alpha = 0.0
+    setupBar.HAnchor = "left"
+    setupBar.VAnchor = "bottom"
+    setupBar.X = 495
+    setupBar.Y = 600
+    setupBar.Alpha = 100.0
+    setupBar.FlashColor = 0x000000
     setupBar.SetPercent(50.0)
-    setupBar.FillDirection = "left"
-    setupBar.SetColors(0xFE1B61, 0xB0B0B0)
+    ;setupBar.FillDirection = "center"
+    ;setupBar.SetColors(0xFE1B61, 0xB0B0B0) 
+    setupBar.SetColors(0xFF96e6, 0x9F1666)
 
     SetBarVisible(setupBar, False)
 endFunction
@@ -116,6 +120,10 @@ Function attemptAttack(Actor attacker, actor victim)
     attackComplete = False
     int cycleCount = 0
     bool victory
+
+    defeatBar.FadeTo(100, 0.1)
+
+    RunStruggleAnim(attacker, victim) 
     
     while (!attackComplete)
         if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
@@ -248,7 +256,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
             CenterLocation[4] = 0
             CenterLocation[5] = 240
 
-            int offset = Utility.RandomInt(20, 30)
+            int offset = OStim.RandomInt(20, 30)
             Attacker.SetPosition(CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
             Attacker.SetAngle(CenterLocation[3] - 60, CenterLocation[4], CenterLocation[5] - offset)
         else

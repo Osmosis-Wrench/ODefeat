@@ -59,6 +59,8 @@ Function startup()
     defeatBar = (Self as Quest) as Osexbar
     InitBar(defeatBar)
 
+    droppedItems = PapyrusUtil.ObjRefArray(6, none)
+
     posref = playerref.PlaceAtMe((Quest.GetQuest("0SA") as _oOmni).OBlankStatic) as ObjectReference
 
     Debug.notification("ODefeat installed")
@@ -135,6 +137,7 @@ Function attemptAttack(Actor attacker, actor victim)
     float difficulty
     bool victimHasCrimeFaction = victim.GetCrimeFaction() as bool ;I think I can remove this.
     warmupTime = 20
+    stripStage
 
     ;Setup Bar percents, also need to investigate bars.
     if (PlayerAttacker)

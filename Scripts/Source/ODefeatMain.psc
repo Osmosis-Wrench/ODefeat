@@ -7,13 +7,24 @@ ObjectReference[] property droppedItems auto
 faction property calmFaction auto
 Package Property DoNothing Auto
 Sound property FXMeleePunchLargeS auto
+ 
+Sound property FXMeleePunchMediumS auto ; TODO SET  - NOT SET YET
 
-ObjectReference posref
+ObjectReference Property posref Auto
 int stripStage
 Float attackStatus
 bool attackComplete
 bool attackRunning
 Osexbar defeatBar
+
+Actor AttackingActor
+Actor VictimActor
+
+int nextKey ; rename this?
+int cycleCount
+
+bool PlayerAttacker
+
 
 int warmupTime
 
@@ -32,6 +43,8 @@ EndFunction
 Function startup()
     ; Register for keypress events. I'm not sure what all of these do yet.
     RegisterForKey(34) ;G - attacks
+    RegisterForKey(42) ;leftshift - Minigame key 1
+    RegisterForKey(54) ;rightshift - Minigame key 2
 
     ; Attack status information.
     attackStatus = 0 ; What do the other numbers mean?
@@ -40,6 +53,8 @@ Function startup()
 
     defeatBar = (Self as Quest) as Osexbar
     InitBar(defeatBar)
+
+    posref = playerref.PlaceAtMe((Quest.GetQuest("0SA") as _oOmni).OBlankStatic) as ObjectReference
 
     Debug.notification("ODefeat installed")
 EndFunction
@@ -51,15 +66,31 @@ Event onKeyDown(int keyCode)
         ;Try to perform attack, or strip dead npc?
         attackKeyHandler()
     EndIf
+
+    if AttackRunning
+        if keyCode == 42 && nextKey == 0
+            nextKey = 1
+
+        elseif keyCode == 54 && nextKey == 1
+            nextKey = 0
+            cycleDone()
+        elseif keyCode == 57
+            cycleCount = -200
+        endif
+    endif
 EndEvent
 
 Function InitBar(OSexBar setupBar)
-    setupBar.HAnchor = "center"
-    setupBar.VAnchor = "middle"
-    setupBar.Alpha = 0.0
+    setupBar.HAnchor = "left"
+    setupBar.VAnchor = "bottom"
+    setupBar.X = 495
+    setupBar.Y = 600
+    setupBar.Alpha = 100.0
+    setupBar.FlashColor = 0x000000
     setupBar.SetPercent(50.0)
-    setupBar.FillDirection = "left"
-    setupBar.SetColors(0xFE1B61, 0xB0B0B0)
+    ;setupBar.FillDirection = "center"
+    ;setupBar.SetColors(0xFE1B61, 0xB0B0B0) 
+    setupBar.SetColors(0xFF96e6, 0x9F1666)
 
     SetBarVisible(setupBar, False)
 endFunction
@@ -84,15 +115,15 @@ EndFunction
 
 Function attemptAttack(Actor attacker, actor victim)
     ; Attempt to start attack minigame.
-    if (isValidAttackTarget(victim) || AttackRunning)
+    if (!isValidAttackTarget(victim) || AttackRunning)
         return
     endif
-    bool PlayerAttacker
-    if (attacker == PlayerRef)
-        PlayerAttacker = True
-    Else
-        PlayerAttacker = false
-    endif
+    attackRunning = true 
+
+    AttackingActor = attacker 
+    VictimActor = victim 
+
+    PlayerAttacker = (attacker == PlayerRef) 
 
     attacker.SheatheWeapon()
     victim.SheatheWeapon()
@@ -114,8 +145,13 @@ Function attemptAttack(Actor attacker, actor victim)
     EndIf
 
     attackComplete = False
-    int cycleCount = 0
+    cycleCount = 0
     bool victory
+    nextKey = 0
+
+    defeatBar.FadeTo(100, 0.1)
+
+    RunStruggleAnim(attacker, victim) 
     
     while (!attackComplete)
         if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
@@ -210,10 +246,47 @@ Function attemptAttack(Actor attacker, actor victim)
         Utility.Wait(2.0)
         toggleCombat()
     endIf
+
+    attackRunning = false
 EndFunction
 
-Function struggleDontMove(actor attacker, actor victim, bool PlayerAttacker, bool moveEnabled)
-    if (PlayerAttacker)
+Function cycleDone() 
+    cycleCount += 10
+    if ostim.chanceRoll(33)
+        Game.ShakeCamera(PlayerRef, afStrength = 1, afDuration = 0.3)
+
+        
+            actor damaged
+            int damage
+
+            if ostim.chanceRoll(66) ;this fucking shit makes no sense
+                damaged = attackingactor
+                damage = 1
+
+                if !PlayerAttacker
+                    Game.triggerscreenblood(1)
+                endif
+
+                
+            Else
+                damaged = VictimActor
+                damage = 2
+
+                if PlayerAttacker
+                    Game.triggerscreenblood(2)
+                endif
+
+        
+            endif
+            if damaged.GetActorValue("health") > 2
+                damaged.damageav("health", damage)
+            endif
+            FXMeleePunchMediumS.Play(damaged)
+    endif
+endfunction 
+
+Function struggleDontMove(actor attacker, actor victim, bool isPlayerAttacker, bool moveEnabled)
+    if (isPlayerAttacker)
         victim.SetDontMove(moveEnabled)
     else
         attacker.SetDontMove(moveEnabled)
@@ -248,7 +321,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
             CenterLocation[4] = 0
             CenterLocation[5] = 240
 
-            int offset = Utility.RandomInt(20, 30)
+            int offset = OStim.RandomInt(20, 30)
             Attacker.SetPosition(CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
             Attacker.SetAngle(CenterLocation[3] - 60, CenterLocation[4], CenterLocation[5] - offset)
         else

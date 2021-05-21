@@ -54,3 +54,13 @@ Version V5
 
 '/// Misc
 b -a DefeatTraumaExit DefeatTraumaExit.hkx
+s Leito_nc_missionary_A1_S1 leito_nc_missionary_a1_s1.hkx
++ Leito_nc_missionary_A1_S2 leito_nc_missionary_a1_s2.hkx
++ Leito_nc_missionary_A1_S3 leito_nc_missionary_a1_s3.hkx
++ Leito_nc_missionary_A1_S4 leito_nc_missionary_a1_s4.hkx
++ Leito_nc_missionary_A1_S5 leito_nc_missionary_a1_s5.hkx
+s Leito_nc_missionary_A2_S1 leito_nc_missionary_a2_s1.hkx
++ Leito_nc_missionary_A2_S2 leito_nc_missionary_a2_s2.hkx
++ Leito_nc_missionary_A2_S3 leito_nc_missionary_a2_s3.hkx
++ Leito_nc_missionary_A2_S4 leito_nc_missionary_a2_s4.hkx
++ Leito_nc_missionary_A2_S5 leito_nc_missionary_a2_s5.hkx

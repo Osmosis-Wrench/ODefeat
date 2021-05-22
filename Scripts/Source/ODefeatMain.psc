@@ -31,7 +31,10 @@ bool PlayerAttacker
 
 int warmupTime
 
-bool cheatMode = false
+bool cheatMode = true
+
+
+bool OStimActorWasKnockedout = False
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -55,6 +58,8 @@ Function startup()
     attackStatus = 0 ; What do the other numbers mean?
     attackComplete = False ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
+
+    RegisterForModEvent("ostim_end", "OstimEnd")
 
     defeatBar = (Self as Quest) as Osexbar
     InitBar(defeatBar)
@@ -135,7 +140,6 @@ Function attemptAttack(Actor attacker, actor victim)
     attacker.SheatheWeapon()
     victim.SheatheWeapon()
     float difficulty
-    bool victimHasCrimeFaction = victim.GetCrimeFaction() as bool ;I think I can remove this.
     warmupTime = 20
     stripStage
 
@@ -394,6 +398,7 @@ Function playerAttackFailedEvent(actor Act)
 endFunction
 
 Function StartScene(actor Dom, actor Sub)
+    OStimActorWasKnockedout = isActorHelpless(Sub)
     Ostim.StartScene(dom, sub, Aggressive = True, AggressingActor = dom)
 EndFunction
 
@@ -587,6 +592,14 @@ Float Function getActorAttackDifficulty(actor target)
     endif
     return ret
 endFunction
+
+Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
+    If(OStimActorWasKnockedout)
+        doTrauma(OStim.getSexPartner( OStim.GetAggressiveActor() ) )
+    EndIf
+
+    OStimActorWasKnockedout = false
+EndEvent 
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)

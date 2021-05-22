@@ -31,7 +31,7 @@ bool PlayerAttacker
 
 int warmupTime
 
-bool cheatMode = true
+bool cheatMode = true ;TODO - disable for release
 
 
 bool OStimActorWasKnockedout = False

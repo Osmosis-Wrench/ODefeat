@@ -53,6 +53,7 @@ Function startup()
     RegisterForKey(34) ;G - attacks
     RegisterForKey(42) ;leftshift - Minigame key 1
     RegisterForKey(54) ;rightshift - Minigame key 2
+    RegisterForKey(57) ;Space - exit minigame fast
 
     ; Attack status information.
     attackStatus = 0 ; What do the other numbers mean?
@@ -244,7 +245,7 @@ Function attemptAttack(Actor attacker, actor victim)
         StruggleDontMove(attacker, victim, playerattacker, false)
     else 
         runStruggleAnim(attacker, victim, false, false, true)
-        Attacker.PushActorAway(victim, 0)
+        Attacker.PushActorAway(victim, 0) ;seems to fail on some actors?
         Victim.PushActorAway(Attacker, 3)
         FXMeleePunchLargeS.Play(Attacker)
         if (PlayerAttacker)
@@ -361,12 +362,16 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         struggleActorPreventMove(attacker, false)
         struggleActorPreventMove(victim, false)
 
+        Victim.SetVehicle(none)
+        Attacker.SetVehicle(none)
+
         if (!noIdle)
             Debug.SendAnimationEvent(attacker, "IdleForceDefaultState")
+           ;Debug.SendAnimationEvent(Victim, "IdleForceDefaultState")
         endif
 
         if !victimStayDown
-            Debug.Notification("VictimStayDown isn't finished yet")
+            ;Debug.SendAnimationEvent(attacker, "IdleForceDefaultState")
         endif
     endif
 EndFunction
@@ -469,7 +474,7 @@ Bool Function doTrauma(Actor target, bool enter = true)
         endWhile
         return true
     else
-        Debug.SendAnimationEvent(target, "DefeatTraumaExit")
+       ; Debug.SendAnimationEvent(target, "DefeatTraumaExit")
         doCalm(Target, Enter = False)
         return true
     endif

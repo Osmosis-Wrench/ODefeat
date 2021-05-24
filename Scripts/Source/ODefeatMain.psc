@@ -350,6 +350,8 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
             int offset = OStim.RandomInt(20, 30)
             Attacker.SetPosition(CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
             Attacker.SetAngle(CenterLocation[3] - 60, CenterLocation[4], CenterLocation[5] - offset)
+
+            ConsoleUtil.ExecuteCommand("player.setangle x 10") ; first person camera allignment
         else
             Attacker.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 6)
             Attacker.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
@@ -390,7 +392,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         endif
 
         if !victimStayDown
-            ;Debug.SendAnimationEvent(attacker, "IdleForceDefaultState")
+            Debug.SendAnimationEvent(victim, "IdleForceDefaultState")
         endif
     endif
 EndFunction

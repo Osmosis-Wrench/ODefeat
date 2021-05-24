@@ -133,6 +133,11 @@ Function attemptAttack(Actor attacker, actor victim)
     if (!isValidAttackTarget(victim) || AttackRunning)
         return
     endif
+
+    If ostim.IsActorActive(victim)
+        ostim.EndAnimation(false)
+    endif 
+
     attackRunning = true 
 
     AttackingActor = attacker 
@@ -391,7 +396,7 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
             act.SetRestrained(true)
             act.SetDontMove(true)
         endif
-        
+
     else
         if (act == PlayerRef)
             Game.SetPlayerAiDriven(False)
@@ -404,6 +409,10 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
 EndFunction
 
 Function playerAttackFailedEvent(actor Act)
+    if ostim.AnimationRunning() && !ostim.IsPlayerInvolved() ;clear background threads
+        ostim.EndAnimation(false)
+        Utility.Wait(2) 
+    endif 
     StartScene(act, playerref)
 endFunction
 
@@ -421,6 +430,11 @@ EndFunction
 
 Function attackKeyHandler()
     actor npc = Game.GetCurrentCrosshairRef() as Actor ; find out if there is a faster way to do this with properties.
+    
+    if ostim.IsActorActive(playerref)
+        return 
+    endif 
+
     if (!npc.isDead())
         If isActorHelpless(npc)
             StartScene(playerref, npc)

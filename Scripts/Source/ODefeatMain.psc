@@ -362,8 +362,8 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
 
         ; disable collision
-        Victim.TranslateTo(0.0, 0.0, 0.0, 90.0, 90.0, 90.0, 1.0, 0.000000001)
-        attacker.TranslateTo(0.0, 0.0, 0.0, 90.0, 90.0, 90.0, 1.0, 0.000000001)
+        ostim.DisableCollision(victim)
+        ostim.DisableCollision(attacker)
 
         ; Parent actors to posref.
         Victim.SetVehicle(posref)
@@ -383,8 +383,8 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         Attacker.SetVehicle(none)
 
         ;reenable collision
-        victim.StopTranslation()
-        attacker.StopTranslation()
+        ostim.EnableCollision(victim)
+        ostim.EnableCollision(attacker)
 
         if (!noIdle)
             Debug.SendAnimationEvent(attacker, "IdleForceDefaultState")

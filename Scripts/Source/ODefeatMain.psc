@@ -34,7 +34,6 @@ int warmupTime
 bool cheatMode = true ;TODO - disable for release
 
 
-bool OStimActorWasKnockedout = False
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -60,15 +59,16 @@ Function startup()
     attackComplete = False ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
 
-    RegisterForModEvent("ostim_end", "OstimEnd")
+    ;RegisterForModEvent("ostim_end", "OstimEnd")
 
     defeatBar = (Self as Quest) as Osexbar
-    InitBar(defeatBar)
+    
 
     droppedItems = PapyrusUtil.ObjRefArray(6, none)
 
     posref = playerref.PlaceAtMe((Quest.GetQuest("0SA") as _oOmni).OBlankStatic) as ObjectReference
 
+    InitBar(defeatBar)
     Debug.notification("ODefeat installed")
 EndFunction
 
@@ -105,6 +105,8 @@ Function InitBar(OSexBar setupBar)
     ;setupBar.SetColors(0xFE1B61, 0xB0B0B0) 
     setupBar.SetColors(0xFF96e6, 0x9F1666)
 
+    Utility.Wait(2)
+    
     SetBarVisible(setupBar, False)
 endFunction
 
@@ -163,7 +165,7 @@ Function attemptAttack(Actor attacker, actor victim)
     nextKey = 0
     int difficultyCounter = 0
 
-    defeatBar.FadeTo(100, 0.1)
+    SetBarVisible(defeatBar, true)
 
     RunStruggleAnim(attacker, victim) 
     
@@ -232,6 +234,8 @@ Function attemptAttack(Actor attacker, actor victim)
         endIf
         Utility.Wait(0.1)
     endWhile
+
+    SetBarVisible(defeatBar, false)
     
     ; On Struggle End
     if (Victory)
@@ -403,7 +407,6 @@ Function playerAttackFailedEvent(actor Act)
 endFunction
 
 Function StartScene(actor Dom, actor Sub)
-    OStimActorWasKnockedout = isActorHelpless(Sub)
     Ostim.StartScene(dom, sub, Aggressive = True, AggressingActor = dom)
 EndFunction
 
@@ -599,11 +602,7 @@ Float Function getActorAttackDifficulty(actor target)
 endFunction
 
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
-    If(OStimActorWasKnockedout)
-        doTrauma(OStim.getSexPartner( OStim.GetAggressiveActor() ) )
-    EndIf
-
-    OStimActorWasKnockedout = false
+    
 EndEvent 
 
 ; This just makes life easier sometimes.

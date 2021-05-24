@@ -7,6 +7,7 @@ Quest property ODefeat auto
 
 Event OnEffectStart(Actor akTarget, Actor akCaster)
 	equipment = (ODefeat as ODefeatMain).droppedItems
+	RegisterForModEvent("ostim_end", "OstimEnd")
 EndEvent
 
 Event OnEffectFinish(Actor akTarget, Actor akCaster)
@@ -20,3 +21,7 @@ Event OnEffectFinish(Actor akTarget, Actor akCaster)
 
 	
 EndEvent
+
+Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
+    (ODefeat as ODefeatMain).doTrauma(GetTargetActor())
+EndEvent 

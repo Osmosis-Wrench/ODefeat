@@ -12,7 +12,7 @@ EndEvent
 
 Event OnEffectFinish(Actor akTarget, Actor akCaster)
 	
-	
+	UnregisterForModEvent("ostim_end")
 	(ODefeat as ODefeatMain).DoTrauma(akTarget, false)
 	
 	Utility.wait(3)

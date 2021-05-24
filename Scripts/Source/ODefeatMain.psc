@@ -106,7 +106,7 @@ Function InitBar(OSexBar setupBar)
     setupBar.SetColors(0xFF96e6, 0x9F1666)
 
     Utility.Wait(2)
-    
+
     SetBarVisible(setupBar, False)
 endFunction
 
@@ -391,6 +391,7 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
             act.SetRestrained(true)
             act.SetDontMove(true)
         endif
+        
     else
         if (act == PlayerRef)
             Game.SetPlayerAiDriven(False)

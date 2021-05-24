@@ -356,8 +356,12 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         endif
 
         ; Place and align victim.
-        victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
         victim.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
+        victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
+
+        ; disable collision
+        Victim.TranslateTo(0.0, 0.0, 0.0, 90.0, 90.0, 90.0, 1.0, 0.000000001)
+        attacker.TranslateTo(0.0, 0.0, 0.0, 90.0, 90.0, 90.0, 1.0, 0.000000001)
 
         ; Parent actors to posref.
         Victim.SetVehicle(posref)
@@ -367,12 +371,18 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         Debug.SendAnimationEvent(Victim, "Leito_nc_missionary_A1_S1")
         Debug.SendAnimationEvent(Attacker, "Leito_nc_missionary_A2_S1")
 
+        
+
     else
         struggleActorPreventMove(attacker, false)
         struggleActorPreventMove(victim, false)
 
         Victim.SetVehicle(none)
         Attacker.SetVehicle(none)
+
+        ;reenable collision
+        victim.StopTranslation()
+        attacker.StopTranslation()
 
         if (!noIdle)
             Debug.SendAnimationEvent(attacker, "IdleForceDefaultState")

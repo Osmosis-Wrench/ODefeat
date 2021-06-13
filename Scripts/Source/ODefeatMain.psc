@@ -16,6 +16,7 @@ MagicEffect property ODefeatMagicEffect auto
 ObjectReference Property posref Auto
 int stripStage
 Float attackStatus
+float nextAttackStatusStripThreshold = 100.0
 bool attackComplete
 bool attackRunning
 Osexbar defeatBar
@@ -154,7 +155,9 @@ Function attemptAttack(Actor attacker, actor victim)
     victim.SheatheWeapon()
     float difficulty
     warmupTime = 20
+    GoToNextState("StripHelmet")
     stripStage
+
 
     ;Setup Bar percents, also need to investigate bars.
     if (PlayerAttacker)
@@ -174,6 +177,7 @@ Function attemptAttack(Actor attacker, actor victim)
     bool victory
     nextKey = 0
     int difficultyCounter = 0
+    int attackPower = 10
 
     SetBarVisible(defeatBar, true)
 
@@ -190,9 +194,9 @@ Function attemptAttack(Actor attacker, actor victim)
 
             ;I'm not sure why this is done yet?
             if (PlayerAttacker)
-                attackStatus += cycleCount - difficulty
+                attackStatus += (cycleCount * attackPower) - difficulty
             else
-                attackStatus -= cycleCount - difficulty
+                attackStatus -= (cycleCount * attackPower) - difficulty
             endif
 
             defeatBar.SetPercent(attackStatus / 100.0)
@@ -203,37 +207,11 @@ Function attemptAttack(Actor attacker, actor victim)
                 difficulty += 1
                 difficultyCounter = 0
             endif
-            
-            ; I want to put all this in a simple function, rather than have this mess. Maybe work out a way to generate this dynamically.
-            If (PlayerAttacker)
-                if     (stripStage == 0 && attackStatus >= 20) ; helmet
-                    StripItem(Victim, victim.GetWornForm(0x00000002))
-                elseif (stripStage == 1 && attackStatus >= 40) ; gauntlet
-                    StripItem(Victim, victim.GetWornForm(0x00000008))
-                elseif (stripStage == 2 && attackStatus >= 60) ; feet
-                    StripItem(Victim, victim.GetWornForm(0x00000080))
-                elseif (stripStage == 3 && attackStatus >= 80) ; left hand
-                    StripItem(Victim, victim.GetEquippedObject(0) as form)
-                elseif (stripStage == 4 && attackStatus >= 90) ; right hand
-                    StripItem(Victim, victim.GetEquippedObject(1) as form)
-                elseif (stripStage == 5 && attackStatus >= 95) ; armor
-                    StripItem(Victim, victim.GetWornForm(0x00000004))
-                endif
-            Else
-                if     (stripStage == 0 && attackStatus >= 84) ; helmet
-                    StripItem(Victim, victim.GetWornForm(0x00000002))
-                elseif (stripStage == 1 && attackStatus >= 87) ; gauntlet
-                    StripItem(Victim, victim.GetWornForm(0x00000008))
-                elseif (stripStage == 2 && attackStatus >= 91) ; feet
-                    StripItem(Victim, victim.GetWornForm(0x00000080))
-                elseif (stripStage == 3 && attackStatus >= 94) ; left hand
-                    StripItem(Victim, victim.GetEquippedObject(0) as form)
-                elseif (stripStage == 4 && attackStatus >= 96) ; right hand
-                    StripItem(Victim, victim.GetEquippedObject(1) as form)
-                elseif (stripStage == 5 && attackStatus >= 98) ; armor
-                    StripItem(Victim, victim.GetWornForm(0x00000004))
-                endif
-            EndIf
+
+            if (attackStatus > nextAttackStatusStripThreshold)
+                stripItem(Victim, GetStripItem(Victim))
+                GoToNextState()
+            endif
 
             if (attackStatus <= 0) ; If attackStatus bar is empty, exit loop.
                 attackComplete = True
@@ -283,7 +261,7 @@ Function attemptAttack(Actor attacker, actor victim)
 EndFunction
 
 Function cycleDone() 
-    cycleCount += 10
+    cycleCount += 1
     if ostim.chanceRoll(33)
         Game.ShakeCamera(PlayerRef, afStrength = 1, afDuration = 0.3)
 
@@ -581,6 +559,130 @@ Function stripActor(Actor target)
 	endif
 EndFunction
 
+function GotoNextState(string targetState = "")
+    if(targetState == "")
+        GotoNextState("StripHelmet")
+    elseif(targetState == "StripHelmet")
+        if(playerattacker)
+            nextAttackStatusStripThreshold = 20
+        else
+            nextAttackStatusStripThreshold = 84
+        endif
+
+        GotoState("StripGauntlets")
+    endif
+
+endFunction
+
+form function GetStripItem(actor target)
+endFunction
+
+state StripHelmet
+    form function GetStripItem(actor target)
+        return target.GetWornForm(0x00000002)
+    endFunction
+
+    function GotoNextState(string targetState = "")
+        if(playerattacker)
+            nextAttackStatusStripThreshold = 40
+        else
+            nextAttackStatusStripThreshold = 87
+        endif
+
+        GotoState("StripGauntlets")
+    endFunction
+endState
+
+state StripGauntlets
+    form function GetStripItem(actor target)
+        return target.GetWornForm(0x00000008)
+    endFunction
+
+    function GotoNextState(string targetState = "")
+        if(playerattacker)
+            nextAttackStatusStripThreshold = 60
+        else
+            nextAttackStatusStripThreshold = 91
+        endif
+
+        GotoState("StripFeet")
+    endFunction
+endState
+
+state StripFeet
+    form function GetStripItem(actor target)
+        return target.GetWornForm(0x00000080)
+    endFunction
+
+    function GotoNextState(string targetState = "")
+        if(playerattacker)
+            nextAttackStatusStripThreshold = 80
+        else
+            nextAttackStatusStripThreshold = 94
+        endif
+
+        GotoState("StripLeftHand")
+    endFunction
+endState
+
+state StripLeftHand
+    form function GetStripItem(actor target)
+        return target.GetEquippedObject(0) as form
+    endFunction
+
+    function GotoNextState(string targetState = "")
+        if(playerattacker)
+            nextAttackStatusStripThreshold = 90
+        else
+            nextAttackStatusStripThreshold = 96
+        endif
+
+        GotoState("StripRightHand")
+    endFunction
+endState
+
+state StripRightHand
+    form function GetStripItem(actor target)
+        return target.GetEquippedObject(1) as form
+    endFunction
+
+    function GotoNextState(string targetState = "")
+        if(playerattacker)
+            nextAttackStatusStripThreshold = 95
+        else
+            nextAttackStatusStripThreshold = 98
+        endif
+
+        GotoState("StripArmor")
+    endFunction
+endState
+
+state StripArmor
+    form function GetStripItem(actor target)
+        return target.GetWornForm(0x00000004)
+    endFunction
+
+    function GotoNextState(string targetState = "")
+        if(playerattacker)
+            nextAttackStatusStripThreshold = 200
+        else
+            nextAttackStatusStripThreshold = 200
+        endif
+
+        GotoState("Stripped")
+    endFunction
+endState
+
+state Stripped
+    form function GetStripItem(actor target)
+
+    endFunction
+
+    function GotoNextState(string targetState = "")
+
+    endFunction
+endState
+
 Function stripItem(actor target, form item, bool doImpulse = true)
     ; Strip a specific item from an actor.
     if (item)
@@ -597,7 +699,8 @@ endFunction
 
 Float Function getActorAttackDifficulty(actor target)
     ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.
-
+    ; Attack provides 10 (attackpower) for a tick and difficulty reduces the impact
+    ; Dificulty is clamped between 10 (impossible) and 5 (50%)
     if cheatMode 
         return 0
     endif 

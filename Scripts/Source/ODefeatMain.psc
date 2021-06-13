@@ -33,6 +33,13 @@ int warmupTime
 
 bool cheatMode = true ;TODO - disable for release
 
+int startAttackKeyCode = 34 ;g
+int minigame0KeyCode = 42 ;leftshift
+int minigame1KeyCode = 54 ;rightshift
+int endAttackKeyCode = 57 ;spacebar
+
+
+
 
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
@@ -49,10 +56,10 @@ EndFunction
 
 Function startup()
     ; Register for keypress events. I'm not sure what all of these do yet.
-    RegisterForKey(34) ;G - attacks
-    RegisterForKey(42) ;leftshift - Minigame key 1
-    RegisterForKey(54) ;rightshift - Minigame key 2
-    RegisterForKey(57) ;Space - exit minigame fast
+    RegisterForKey(startAttackKeyCode) ;G - attacks
+    RegisterForKey(minigame0KeyCode) ;leftshift - Minigame key 1
+    RegisterForKey(minigame1KeyCode) ;rightshift - Minigame key 2
+    RegisterForKey(endAttackKeyCode) ;Space - exit minigame fast
 
     ; Attack status information.
     attackStatus = 0 ; What do the other numbers mean?
@@ -73,24 +80,24 @@ Function startup()
 EndFunction
 
 Event onKeyDown(int keyCode)
-    if (Utility.IsInMenuMode())
+    if (Utility.IsInMenuMode() || UI.IsMenuOpen("console"))
         return
-    Elseif (keyCode == 34) ; G
+    endif
+
+    if attackRunning
+        if keyCode == minigame0KeyCode && nextKey == 0
+            nextKey = 1
+
+        elseif keyCode == minigame1KeyCode && nextKey == 1
+            nextKey = 0
+            cycleDone()
+        elseif keyCode == endAttackKeyCode
+            cycleCount = -200
+        endif
+    Elseif (keyCode == startAttackKeyCode) ; G
         ;Try to perform attack, or strip dead npc?
         attackKeyHandler()
     EndIf
-
-    if AttackRunning
-        if keyCode == 42 && nextKey == 0
-            nextKey = 1
-
-        elseif keyCode == 54 && nextKey == 1
-            nextKey = 0
-            cycleDone()
-        elseif keyCode == 57
-            cycleCount = -200
-        endif
-    endif
 EndEvent
 
 Function InitBar(OSexBar setupBar)
@@ -98,14 +105,12 @@ Function InitBar(OSexBar setupBar)
     setupBar.VAnchor = "bottom"
     setupBar.X = 495
     setupBar.Y = 600
-    setupBar.Alpha = 100.0
+    setupBar.Alpha = 0.0
     setupBar.FlashColor = 0x000000
     setupBar.SetPercent(50.0)
     ;setupBar.FillDirection = "center"
     ;setupBar.SetColors(0xFE1B61, 0xB0B0B0) 
-    setupBar.SetColors(0xFF96e6, 0x9F1666)
-
-    Utility.Wait(2)
+    setupBar.SetColors(0xFF96e6, 0x9F1666)  
 
     SetBarVisible(setupBar, False)
 endFunction
@@ -181,14 +186,7 @@ Function attemptAttack(Actor attacker, actor victim)
             else
                 warmupTime -= 1
             endif
-        else ; do the main minigame loop.
-            if (attackStatus <= 0) ; If attackStatus bar is empty, exit loop.
-                attackComplete = True
-                victory = false
-            elseif (attackStatus >= 100) ; If attackStatus bar is full, exit loop.
-                attackComplete = True
-                victory = True
-            endIf
+        else ; do the main minigame loop.           
 
             ;I'm not sure why this is done yet?
             if (PlayerAttacker)
@@ -236,6 +234,14 @@ Function attemptAttack(Actor attacker, actor victim)
                     StripItem(Victim, victim.GetWornForm(0x00000004))
                 endif
             EndIf
+
+            if (attackStatus <= 0) ; If attackStatus bar is empty, exit loop.
+                attackComplete = True
+                victory = false
+            elseif (attackStatus >= 100) ; If attackStatus bar is full, exit loop.
+                attackComplete = True
+                victory = True
+            endIf
         endIf
         Utility.Wait(0.1)
     endWhile
@@ -275,6 +281,8 @@ Function attemptAttack(Actor attacker, actor victim)
 
     attackRunning = false
 EndFunction
+
+
 
 Function cycleDone() 
     cycleCount += 10
@@ -575,6 +583,8 @@ Function stripActor(Actor target)
 	endif
 EndFunction
 
+
+
 Function stripItem(actor target, form item, bool doImpulse = true)
     ; Strip a specific item from an actor.
     if (item)
@@ -586,6 +596,10 @@ Function stripItem(actor target, form item, bool doImpulse = true)
         droppedItems[stripStage] = DroppedItem
     endif
     stripStage += 1
+endFunction
+
+function StripItemST(actor act, bool doImpules = true)
+    ; attempt nothing
 endFunction
 
 Float Function getActorAttackDifficulty(actor target)

@@ -282,8 +282,6 @@ Function attemptAttack(Actor attacker, actor victim)
     attackRunning = false
 EndFunction
 
-
-
 Function cycleDone() 
     cycleCount += 10
     if ostim.chanceRoll(33)
@@ -583,8 +581,6 @@ Function stripActor(Actor target)
 	endif
 EndFunction
 
-
-
 Function stripItem(actor target, form item, bool doImpulse = true)
     ; Strip a specific item from an actor.
     if (item)
@@ -598,9 +594,6 @@ Function stripItem(actor target, form item, bool doImpulse = true)
     stripStage += 1
 endFunction
 
-function StripItemST(actor act, bool doImpules = true)
-    ; attempt nothing
-endFunction
 
 Float Function getActorAttackDifficulty(actor target)
     ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.

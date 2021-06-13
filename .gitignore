@@ -1,2 +1,8 @@
 
 Scripts/Source/SLGMainQuestScript.psc
+.vscode/launch.json
+.vscode/tasks.json
+SkyrimSE.code-workspace
+b.bat
+fullbuild.bat
+*.pex

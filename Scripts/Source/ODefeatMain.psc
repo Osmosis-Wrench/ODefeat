@@ -32,7 +32,7 @@ bool PlayerAttacker
 
 int warmupTime
 
-bool cheatMode = true ;TODO - disable for release
+bool Property cheatMode = true auto ;TODO - disable for release
 
 int startAttackKeyCode = 34 ;g
 int minigame0KeyCode = 42 ;leftshift
@@ -155,7 +155,6 @@ Function attemptAttack(Actor attacker, actor victim)
     victim.SheatheWeapon()
     float difficulty
     warmupTime = 20
-    GoToNextState("StripHelmet")
     stripStage
 
 
@@ -192,7 +191,7 @@ Function attemptAttack(Actor attacker, actor victim)
             endif
         else ; do the main minigame loop.           
 
-            ;I'm not sure why this is done yet?
+            
             if (PlayerAttacker)
                 attackStatus += (cycleCount * attackPower) - difficulty
             else
@@ -201,15 +200,17 @@ Function attemptAttack(Actor attacker, actor victim)
 
             defeatBar.SetPercent(attackStatus / 100.0)
             cycleCount = 0
-            difficultyCounter += 1
-
-            if difficultyCounter >= 50 ;boost difficulty if slow
-                difficulty += 1
-                difficultyCounter = 0
+            if(!cheatMode)
+                difficultyCounter += 1
+                if difficultyCounter >= 50 ;boost difficulty if slow
+                    difficulty += 1
+                    difficultyCounter = 0
+                endif
             endif
-
-            if (attackStatus > nextAttackStatusStripThreshold)
-                stripItem(Victim, GetStripItem(Victim))
+            WriteLog(GetState())
+            if (attackStatus > GetNextAttackStatusStripThreshold())
+                WriteLog(attackStatus + " -> " + GetNextAttackStatusStripThreshold())
+                stripItem(Victim, GetNextStripItem(Victim))
                 GoToNextState()
             endif
 
@@ -559,127 +560,123 @@ Function stripActor(Actor target)
 	endif
 EndFunction
 
-function GotoNextState(string targetState = "")
-    if(targetState == "")
-        GotoNextState("StripHelmet")
-    elseif(targetState == "StripHelmet")
-        if(playerattacker)
-            nextAttackStatusStripThreshold = 20
-        else
-            nextAttackStatusStripThreshold = 84
-        endif
-
-        GotoState("StripGauntlets")
-    endif
-
+;; Base State
+function GotoNextState()    
+    GotoState("StrippedHelmet")
 endFunction
 
-form function GetStripItem(actor target)
+form function GetNextStripItem(actor target)
+    return target.GetWornForm(0x00000002) ; Helmet
 endFunction
 
-state StripHelmet
-    form function GetStripItem(actor target)
-        return target.GetWornForm(0x00000002)
+float function GetNextAttackStatusStripThreshold()
+    if(playerattacker)
+            return 20
+        else
+            return 84
+        endif
+endfunction
+;;
+
+state StrippedHelmet
+    form function GetNextStripItem(actor target)
+        return target.GetWornForm(0x00000008) ; Gauntlets
     endFunction
 
-    function GotoNextState(string targetState = "")
+    float function GetNextAttackStatusStripThreshold()
         if(playerattacker)
-            nextAttackStatusStripThreshold = 40
-        else
-            nextAttackStatusStripThreshold = 87
-        endif
+                return 40
+            else
+                return 87
+            endif
+    endfunction
 
-        GotoState("StripGauntlets")
+    function GotoNextState()
+        GotoState("StrippedGauntlets")
     endFunction
 endState
 
-state StripGauntlets
-    form function GetStripItem(actor target)
-        return target.GetWornForm(0x00000008)
+state StrippedGauntlets
+    form function GetNextStripItem(actor target)
+        return target.GetWornForm(0x00000080) ; feet
     endFunction
 
-    function GotoNextState(string targetState = "")
+    float function GetNextAttackStatusStripThreshold()
         if(playerattacker)
-            nextAttackStatusStripThreshold = 60
-        else
-            nextAttackStatusStripThreshold = 91
-        endif
-
-        GotoState("StripFeet")
+                return 60
+            else
+                return 91
+            endif
+    endfunction
+    
+    function GotoNextState()
+        GotoState("StrippedFeet")
     endFunction
 endState
 
-state StripFeet
-    form function GetStripItem(actor target)
-        return target.GetWornForm(0x00000080)
+state StrippedFeet
+    form function GetNextStripItem(actor target)
+        return target.GetEquippedObject(0) as form ; left hand
     endFunction
 
-    function GotoNextState(string targetState = "")
+    float function GetNextAttackStatusStripThreshold()
         if(playerattacker)
-            nextAttackStatusStripThreshold = 80
-        else
-            nextAttackStatusStripThreshold = 94
-        endif
+                return 80
+            else
+                return 94
+            endif
+    endfunction
 
-        GotoState("StripLeftHand")
+    function GotoNextState()
+        GotoState("StrippedLeftHand")
     endFunction
 endState
 
-state StripLeftHand
-    form function GetStripItem(actor target)
-        return target.GetEquippedObject(0) as form
+state StrippedLeftHand
+    form function GetNextStripItem(actor target)
+        return target.GetEquippedObject(1) as form ; right hand
     endFunction
 
-    function GotoNextState(string targetState = "")
+    float function GetNextAttackStatusStripThreshold()
         if(playerattacker)
-            nextAttackStatusStripThreshold = 90
-        else
-            nextAttackStatusStripThreshold = 96
-        endif
+                return 90
+            else
+                return 96
+            endif
+    endfunction
 
-        GotoState("StripRightHand")
+    function GotoNextState()
+        GotoState("StrippedRightHand")
     endFunction
 endState
 
-state StripRightHand
-    form function GetStripItem(actor target)
-        return target.GetEquippedObject(1) as form
+state StrippedRightHand
+    form function GetNextStripItem(actor target)
+        return target.GetWornForm(0x00000004) ; armor
     endFunction
 
-    function GotoNextState(string targetState = "")
+    float function GetNextAttackStatusStripThreshold()
         if(playerattacker)
-            nextAttackStatusStripThreshold = 95
-        else
-            nextAttackStatusStripThreshold = 98
-        endif
+                return 95
+            else
+                return 98
+            endif
+    endfunction
 
-        GotoState("StripArmor")
+    function GotoNextState()
+        GotoState("StrippedArmor")
     endFunction
 endState
 
-state StripArmor
-    form function GetStripItem(actor target)
-        return target.GetWornForm(0x00000004)
+state StrippedArmor
+    form function GetNextStripItem(actor target)
     endFunction
 
-    function GotoNextState(string targetState = "")
-        if(playerattacker)
-            nextAttackStatusStripThreshold = 200
-        else
-            nextAttackStatusStripThreshold = 200
-        endif
+    float function GetNextAttackStatusStripThreshold()
+        return 200
+    endfunction
 
-        GotoState("Stripped")
-    endFunction
-endState
-
-state Stripped
-    form function GetStripItem(actor target)
-
-    endFunction
-
-    function GotoNextState(string targetState = "")
-
+    function GotoNextState()
     endFunction
 endState
 

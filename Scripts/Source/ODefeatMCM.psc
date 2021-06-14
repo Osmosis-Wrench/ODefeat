@@ -1,20 +1,31 @@
-Scriptname ODefeatMCM extends ski_configbase  
+Scriptname ODefeatMCM extends nl_mcm_module  
 
-Event OnConfigInit()
-    ; Stuff
+ODefeatMain property main auto
+
+Event OnInit()
+    RegisterModule("core")
 endEvent
 
-Event OnPageReset(string a_page)
-    ;Stuff
-EndEvent
+Event OnPageInit()
+    SetModName("ODefeat")
+    SetLandingPage("Core")    
+endEvent
 
-Event OnOptionSelect(int Option)
-    ;Stuff
-EndEvent
+event OnPageDraw()
+    AddToggleOptionST("ChaeatModeEnabledState", "Enable Cheat Mode", main.cheatMode)
+endEvent
 
-Event OnOptionHighlight(Int Option)
-    ;Stuff
-EndEvent
+
+state ChaeatModeEnabledState
+    event OnSelectST(string state_id)
+        main.cheatMode = !main.cheatMode
+        SetToggleOptionValueST(main.cheatMode)
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("")
+    endEvent
+endState
 
 ; Modified version of the same function from Ostim, just with manual control.
 Function AddColoredHeader(String In, String color = "Pink")

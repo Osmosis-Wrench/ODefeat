@@ -12,11 +12,11 @@ Event OnPageInit()
 endEvent
 
 event OnPageDraw()
-    AddToggleOptionST("ChaeatModeEnabledState", "Enable Cheat Mode", main.cheatMode)
+    AddToggleOptionST("CheatModeEnabledState", "Enable Cheat Mode", main.cheatMode)
 endEvent
 
 
-state ChaeatModeEnabledState
+state CheatModeEnabledState
     event OnSelectST(string state_id)
         main.cheatMode = !main.cheatMode
         SetToggleOptionValueST(main.cheatMode)

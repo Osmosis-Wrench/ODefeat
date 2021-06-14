@@ -16,7 +16,6 @@ MagicEffect property ODefeatMagicEffect auto
 ObjectReference Property posref Auto
 int stripStage
 Float attackStatus
-float nextAttackStatusStripThreshold = 100.0
 bool attackComplete
 bool attackRunning
 Osexbar defeatBar
@@ -207,9 +206,8 @@ Function attemptAttack(Actor attacker, actor victim)
                     difficultyCounter = 0
                 endif
             endif
-            WriteLog(GetState())
+            
             if (attackStatus > GetNextAttackStatusStripThreshold())
-                WriteLog(attackStatus + " -> " + GetNextAttackStatusStripThreshold())
                 stripItem(Victim, GetNextStripItem(Victim))
                 GoToNextState()
             endif
@@ -695,9 +693,8 @@ endFunction
 
 
 Float Function getActorAttackDifficulty(actor target)
-    ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.
-    ; Attack provides 10 (attackpower) for a tick and difficulty reduces the impact
-    ; Dificulty is clamped between 10 (impossible) and 5 (50%)
+    ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.    
+    ; Dificulty is clamped between 10 and 5 
     if cheatMode 
         return 0
     endif 

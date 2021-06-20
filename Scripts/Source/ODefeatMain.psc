@@ -8,7 +8,7 @@ faction property calmFaction auto
 Package Property DoNothing Auto
 Sound property FXMeleePunchLargeS auto
  
-Sound property FXMeleePunchMediumS auto ; TODO SET  - NOT SET YET
+Sound property FXMeleePunchMediumS auto 
 
 Spell property ODefeatSpell auto 
 MagicEffect property ODefeatMagicEffect auto
@@ -232,7 +232,7 @@ Function attemptAttack(Actor attacker, actor victim)
         if (PlayerAttacker)
             doTrauma(victim)
         else
-            PlayerAttackFailedEvent(attacker)
+            PlayerAttackFailedEvent(attacker) ; maybe needs renaming to player defense failed?
         endif
         StruggleDontMove(attacker, victim, playerattacker, false)
     else 

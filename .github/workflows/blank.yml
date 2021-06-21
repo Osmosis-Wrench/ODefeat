@@ -20,7 +20,7 @@ jobs:
         - 'odefeat_ci.ppj'
     env:
       # Set these
-      dist-path: dist                               # Folder containing the output from the project files
+      dist-path: '../dist'                               # Folder containing the output from the project files
       compiler-repo: Osmosis-Wrench/JContainers-Compiler-Only     # Github repository containing the papyrus compiler
       compiler-token: ${{ github.token }}  # Just use ${{ github.token }} if the compiler repository is not private
       pyro-token: ${{ github.token }}      # Just use ${{ github.token }} if the ppj file does not use private imports

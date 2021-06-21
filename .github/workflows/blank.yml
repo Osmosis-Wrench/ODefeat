@@ -8,7 +8,7 @@ on:
     - main
     # Set the push folders
     paths:
-    - 'example/folder/path'
+    - 'main'
 
 jobs:
   build:

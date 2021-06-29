@@ -76,6 +76,7 @@ Function startup()
     posref = playerref.PlaceAtMe((Quest.GetQuest("0SA") as _oOmni).OBlankStatic) as ObjectReference
 
     InitBar(defeatBar)
+    OUtils.RegisterForOUpdate(self)
     Debug.notification("ODefeat installed")
 EndFunction
 

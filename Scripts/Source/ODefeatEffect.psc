@@ -11,15 +11,12 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 EndEvent
 
 Event OnEffectFinish(Actor akTarget, Actor akCaster)
-	
 	UnregisterForModEvent("ostim_end")
 	(ODefeat as ODefeatMain).DoTrauma(akTarget, false)
 	
 	Utility.wait(3)
 
 	(ODefeat as ODefeatMain).ostim.GetUndressScript().PickUpThings(akTarget, equipment)
-
-	
 EndEvent
 
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)

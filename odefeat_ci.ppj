@@ -26,9 +26,10 @@
         <Import>https://github.com/Sairion350/OOPapyrus/tree/main/scripts/source</Import>
     </Imports>
     <Scripts>
-        <Script>@MyProject/Scripts/Source/ODefeatEffect.psc</Script>
-        <Script>@MyProject/Scripts/Source/ODefeatMain.psc</Script>
-        <Script>@MyProject/Scripts/Source/ODefeatMCM.psc</Script>
+        <Script>ODefeatEffect.psc</Script>
+        <Script>ODefeatEffectCollapse.psc</Script>
+        <Script>ODefeatMain.psc</Script>
+        <Script>ODefeatMCM.psc</Script>
     </Scripts>
     <ZipFiles Output="@Dist">
         <ZipFile Name="@ModName - @Ver" RootDir="@MyProject" Compression="deflate">

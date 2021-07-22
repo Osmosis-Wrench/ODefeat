@@ -156,8 +156,6 @@ Function attemptAttack(Actor attacker, actor victim)
     warmupTime = 20
     stripStage
 
-
-    ;Setup Bar percents, also need to investigate bars.
     if (PlayerAttacker)
         difficulty = getActorAttackDifficulty(victim)
         defeatBar.setPercent(0.05)
@@ -189,8 +187,6 @@ Function attemptAttack(Actor attacker, actor victim)
                 warmupTime -= 1
             endif
         else ; do the main minigame loop.           
-
-            
             if (PlayerAttacker)
                 attackStatus += (cycleCount * attackPower) - difficulty
             else
@@ -263,34 +259,25 @@ Function cycleDone()
     cycleCount += 1
     if ostim.chanceRoll(33)
         Game.ShakeCamera(PlayerRef, afStrength = 1, afDuration = 0.3)
-
-        
-            actor damaged
-            int damage
-
-            if ostim.chanceRoll(66) ;this fucking shit makes no sense
-                damaged = attackingactor
-                damage = 1
-
-                if !PlayerAttacker
-                    Game.triggerscreenblood(1)
-                endif
-
-                
-            Else
-                damaged = VictimActor
-                damage = 2
-
-                if PlayerAttacker
-                    Game.triggerscreenblood(2)
-                endif
-
-        
+        actor damaged
+        int damage
+        if ostim.chanceRoll(66) ;this fucking shit makes no sense
+            damaged = attackingactor
+            damage = 1
+            if !PlayerAttacker
+                Game.triggerscreenblood(1)
+            endif 
+        Else
+            damaged = VictimActor
+            damage = 2
+            if PlayerAttacker
+                Game.triggerscreenblood(2)
             endif
-            if damaged.GetActorValue("health") > 2
-                damaged.damageav("health", damage)
-            endif
-            FXMeleePunchMediumS.Play(damaged)
+        endif
+        if damaged.GetActorValue("health") > 2
+            damaged.damageav("health", damage)
+        endif
+        FXMeleePunchMediumS.Play(damaged)
     endif
 endfunction 
 
@@ -355,9 +342,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         ; Start Struggle anim.
         Debug.SendAnimationEvent(Victim, "Leito_nc_missionary_A1_S1")
         Debug.SendAnimationEvent(Attacker, "Leito_nc_missionary_A2_S1")
-
-        
-
+    
     else
         struggleActorPreventMove(attacker, false)
         struggleActorPreventMove(victim, false)
@@ -487,7 +472,6 @@ Bool Function doTrauma(Actor target, bool enter = true)
         endWhile
         return true
     else
-       ; Debug.SendAnimationEvent(target, "DefeatTraumaExit")
         doCalm(Target, Enter = False)
         return true
     endif
@@ -558,6 +542,72 @@ Function stripActor(Actor target)
 	endif
 EndFunction
 
+Function stripItem(actor target, form item, bool doImpulse = true)
+    ; Strip a specific item from an actor.
+    if (item)
+        objectreference droppedItem = target.dropObject(item)
+        droppedItem.SetPosition(DroppedItem.GetPositionX(), DroppedItem.GetPositiony(), DroppedItem.GetPositionz() + 64)
+        if (doImpulse)
+            droppedItem.applyHavokImpulse(Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(0.2, 1.8), Utility.RandomFloat(10, 50))
+        endif
+        droppedItems[stripStage] = DroppedItem
+    endif
+    stripStage += 1
+endFunction
+
+Float Function getActorAttackDifficulty(actor target)
+    ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.    
+    ; Dificulty is clamped between 10 and 5 
+    if cheatMode 
+        return 0
+    endif 
+
+    float ret = 0
+    float levelRatio = ((target.GetLevel() as Float)/(playerref.GetLevel() as Float)) * 100
+    if (levelRatio > 140)
+        ret = 10.0
+    elseif (levelRatio > 125)
+        ret = 9.0
+    elseif (levelRatio > 100)
+        ret = 8.0
+    elseif (levelRatio > 70)
+        ret = 7.5
+    elseif (levelRatio > 35)
+        ret = 6.5
+    endif
+    if (target.IsBleedingOut())
+        ret -= 7.5
+    else
+        ret -= ((100.0 - (target.GetActorValuePercentage("Health") * 100)) / 40.0)
+    endif
+    if (!playerRef.IsDetectedBy(target))
+        ret -= 1.0
+    endif
+    if (!target.IsInCombat())
+        ret -= 1.0
+    endif
+    if target.GetSleepState() == 3
+		ret -= 1
+	endif
+    if (ret < 5.0)
+        ret = 5.0
+    endif
+    return ret
+endFunction
+
+Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
+    
+EndEvent 
+
+; This just makes life easier sometimes.
+Function WriteLog(String OutputLog, bool error = false)
+    MiscUtil.PrintConsole("ODefeat: " + OutputLog)
+    Debug.Trace("ODefeat: " + OutputLog)
+    if (error == true)
+        Debug.Notification("ODefeat: " + OutputLog)
+    endIF
+EndFunction
+
 ;; Base State
 function GotoNextState()    
     GotoState("StrippedHelmet")
@@ -574,7 +624,6 @@ float function GetNextAttackStatusStripThreshold()
             return 84
         endif
 endfunction
-;;
 
 state StrippedHelmet
     form function GetNextStripItem(actor target)
@@ -677,70 +726,3 @@ state StrippedArmor
     function GotoNextState()
     endFunction
 endState
-
-Function stripItem(actor target, form item, bool doImpulse = true)
-    ; Strip a specific item from an actor.
-    if (item)
-        objectreference droppedItem = target.dropObject(item)
-        droppedItem.SetPosition(DroppedItem.GetPositionX(), DroppedItem.GetPositiony(), DroppedItem.GetPositionz() + 64)
-        if (doImpulse)
-            droppedItem.applyHavokImpulse(Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(0.2, 1.8), Utility.RandomFloat(10, 50))
-        endif
-        droppedItems[stripStage] = DroppedItem
-    endif
-    stripStage += 1
-endFunction
-
-
-Float Function getActorAttackDifficulty(actor target)
-    ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.    
-    ; Dificulty is clamped between 10 and 5 
-    if cheatMode 
-        return 0
-    endif 
-
-    float ret = 0
-    float levelRatio = ((target.GetLevel() as Float)/(playerref.GetLevel() as Float)) * 100
-    if (levelRatio > 140)
-        ret = 10.0
-    elseif (levelRatio > 125)
-        ret = 9.0
-    elseif (levelRatio > 100)
-        ret = 8.0
-    elseif (levelRatio > 70)
-        ret = 7.5
-    elseif (levelRatio > 35)
-        ret = 6.5
-    endif
-    if (target.IsBleedingOut())
-        ret -= 7.5
-    else
-        ret -= ((100.0 - (target.GetActorValuePercentage("Health") * 100)) / 40.0)
-    endif
-    if (!playerRef.IsDetectedBy(target))
-        ret -= 1.0
-    endif
-    if (!target.IsInCombat())
-        ret -= 1.0
-    endif
-    if target.GetSleepState() == 3
-		ret -= 1
-	endif
-    if (ret < 5.0)
-        ret = 5.0
-    endif
-    return ret
-endFunction
-
-Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
-    
-EndEvent 
-
-; This just makes life easier sometimes.
-Function WriteLog(String OutputLog, bool error = false)
-    MiscUtil.PrintConsole("ODefeat: " + OutputLog)
-    Debug.Trace("ODefeat: " + OutputLog)
-    if (error == true)
-        Debug.Notification("ODefeat: " + OutputLog)
-    endIF
-EndFunction

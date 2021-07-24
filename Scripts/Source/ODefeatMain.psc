@@ -66,7 +66,7 @@ Function startup()
     attackComplete = False ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
 
-    ;RegisterForModEvent("ostim_end", "OstimEnd")
+    RegisterForModEvent("ostim_end", "OstimEnd")
 
     defeatBar = (Self as Quest) as Osexbar
     
@@ -404,15 +404,15 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
     endif
 EndFunction
 
-Function playerAttackFailedEvent(actor Act)
-    if ostim.AnimationRunning() && !ostim.IsPlayerInvolved() ;clear background threads
-        ostim.EndAnimation(false)
-        Utility.Wait(2) 
-    endif 
-    StartScene(act, playerref)
+Function playerAttackFailedEvent(actor Act) 
+    ostim.AddSceneMetadata("odefeat")
+    ostim.AddSceneMetadata("odefeat_victim")
+    ostim.StartScene(act, playerref, Aggressive = true, AggressingActor = act)
 endFunction
 
 Function StartScene(actor Dom, actor Sub)
+    ostim.AddSceneMetadata("odefeat")
+    ostim.AddSceneMetadata("odefeat_aggressor")
     Ostim.StartScene(dom, sub, Aggressive = True, AggressingActor = dom)
 EndFunction
 
@@ -734,7 +734,9 @@ Float Function getActorAttackDifficulty(actor target)
 endFunction
 
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
-    
+    if ostim.HasSceneMetadata("odefeat_aggressor")
+        doTrauma(ostim.getsexpartner(ostim.GetAggressiveActor()), enter = true)
+    endif 
 EndEvent 
 
 ; This just makes life easier sometimes.

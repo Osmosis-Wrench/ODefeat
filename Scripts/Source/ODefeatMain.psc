@@ -28,6 +28,7 @@ int cycleCount
 
 bool PlayerAttacker
 
+bool OCrimeIntegration
 
 int warmupTime
 
@@ -70,6 +71,7 @@ Function startup()
 
     defeatBar = (Self as Quest) as Osexbar
     
+    OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 
     droppedItems = PapyrusUtil.ObjRefArray(6, none)
 
@@ -156,6 +158,13 @@ Function attemptAttack(Actor attacker, actor victim)
     float difficulty
     warmupTime = 20
     stripStage
+
+    if OCrimeIntegration
+        int ocrime_event = ModEvent.Create("ocrime_crime")
+        ModEvent.PushForm(ocrime_event, attacker)
+        ModEvent.PushBool(ocrime_event, true)
+        ModEvent.Send(ocrime_event)
+    endif 
 
 
     ;Setup Bar percents, also need to investigate bars.

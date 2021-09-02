@@ -1,4 +1,6 @@
-Scriptname ODefeatMain extends Quest  
+Scriptname ODefeatMain extends Quest 
+import outils 
+
 Actor Property PlayerRef Auto  
 ODefeatMCM Property ODefMCM Auto
 OsexIntegrationMain Property Ostim Auto
@@ -23,8 +25,8 @@ Osexbar defeatBar
 Actor AttackingActor
 Actor VictimActor
 
-int nextKey ; rename this?
-int cycleCount
+int nextInputNeeded 
+int GameCompletionsSinceLastCheck
 
 bool PlayerAttacker
 
@@ -55,19 +57,19 @@ Function onInit()
     Startup()
 EndFunction
 
+ODefeatMain Function GetODefeat() Global
+    return outils.GetFormFromFile(0x12c5, "odefeat.esp")  as ODefeatMain
+endfunction
+
 Function startup()
-    ; Register for keypress events. I'm not sure what all of these do yet.
-    RegisterForKey(startAttackKeyCode) ;G - attacks
-    RegisterForKey(minigame0KeyCode) ;leftshift - Minigame key 1
-    RegisterForKey(minigame1KeyCode) ;rightshift - Minigame key 2
-    RegisterForKey(endAttackKeyCode) ;Space - exit minigame fast
+
 
     ; Attack status information.
-    attackStatus = 0 ; What do the other numbers mean?
+    attackStatus = 0 
     attackComplete = False ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
 
-    RegisterForModEvent("ostim_end", "OstimEnd")
+    
 
     defeatBar = (Self as Quest) as Osexbar
     
@@ -79,23 +81,41 @@ Function startup()
 
     InitBar(defeatBar)
     OUtils.RegisterForOUpdate(self)
+    ostim.RegisterForGameLoadEvent(self)
+
+    OnGameLoad()
+
     Debug.notification("ODefeat installed")
 EndFunction
 
+Event OnGameLoad()
+    RegisterForModEvent("ostim_end", "OstimEnd")
+    attackRunning = false
+
+     ; Register for keypress events. I'm not sure what all of these do yet.
+    RegisterForKey(startAttackKeyCode) ;G - attacks
+    RegisterForKey(minigame0KeyCode) ;leftshift - Minigame key 1
+    RegisterForKey(minigame1KeyCode) ;rightshift - Minigame key 2
+    RegisterForKey(endAttackKeyCode) ;Space - exit minigame fast
+EndEvent
+
 Event onKeyDown(int keyCode)
-    if (Utility.IsInMenuMode() || UI.IsMenuOpen("console"))
+    
+    if MenuOpen()
         return
     endif
 
     if attackRunning
-        if keyCode == minigame0KeyCode && nextKey == 0
-            nextKey = 1
+        
 
-        elseif keyCode == minigame1KeyCode && nextKey == 1
-            nextKey = 0
+        if keyCode == minigame0KeyCode && nextInputNeeded == 0
+            nextInputNeeded = 1
+
+        elseif keyCode == minigame1KeyCode && nextInputNeeded == 1
+            nextInputNeeded = 0
             cycleDone()
         elseif keyCode == endAttackKeyCode
-            cycleCount = -200
+            GameCompletionsSinceLastCheck = -200
         endif
     Elseif (keyCode == startAttackKeyCode) ; G
         ;Try to perform attack, or strip dead npc?
@@ -115,18 +135,10 @@ Function InitBar(OSexBar setupBar)
     ;setupBar.SetColors(0xFE1B61, 0xB0B0B0) 
     setupBar.SetColors(0xFF96e6, 0x9F1666)  
 
-    SetBarVisible(setupBar, False)
+    setupbar.SetBarVisible(False)
 endFunction
 
-Function SetBarVisible(Osexbar setupBar, Bool Visible)
-	If (Visible)
-		setupBar.FadeTo(100.0, 1.0)
-		setupBar.FadedOut = False
-	Else
-		setupBar.FadeTo(0.0, 1.0)
-		setupBar.FadedOut = True
-	EndIf
-EndFunction
+
 
 ;  ███╗   ███╗ █████╗ ██╗███╗   ██╗
 ;  ████╗ ████║██╔══██╗██║████╗  ██║
@@ -157,8 +169,9 @@ Function attemptAttack(Actor attacker, actor victim)
     victim.SheatheWeapon()
     float difficulty
     warmupTime = 20
-    stripStage
+    stripStage ;?
 
+    ; fire rape alert if ocrime installed
     if OCrimeIntegration
         int ocrime_event = ModEvent.Create("ocrime_crime")
         ModEvent.PushForm(ocrime_event, attacker)
@@ -181,19 +194,19 @@ Function attemptAttack(Actor attacker, actor victim)
     EndIf
 
     attackComplete = False
-    cycleCount = 0
+    GameCompletionsSinceLastCheck = 0
     bool victory
-    nextKey = 0
+    nextInputNeeded = 0
     int difficultyCounter = 0
     int attackPower = 10
 
-    SetBarVisible(defeatBar, true)
+    defeatbar.SetBarVisible( true)
 
     RunStruggleAnim(attacker, victim) 
     
     while (!attackComplete)
         if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
-            if (cycleCount > 0)
+            if (GameCompletionsSinceLastCheck > 0)
                 warmupTime = 0
             else
                 warmupTime -= 1
@@ -202,16 +215,17 @@ Function attemptAttack(Actor attacker, actor victim)
 
             
             if (PlayerAttacker)
-                attackStatus += (cycleCount * attackPower) - difficulty
+                attackStatus += (GameCompletionsSinceLastCheck * attackPower) - difficulty
             else
-                attackStatus -= (cycleCount * attackPower) - difficulty
+                attackStatus -= (GameCompletionsSinceLastCheck * attackPower) - difficulty
             endif
 
             defeatBar.SetPercent(attackStatus / 100.0)
-            cycleCount = 0
+            GameCompletionsSinceLastCheck = 0
+
             if(!cheatMode)
                 difficultyCounter += 1
-                if difficultyCounter >= 50 ;boost difficulty if slow
+                if difficultyCounter >= 50 ;boost difficulty if slow (5 seconds)
                     difficulty += 1
                     difficultyCounter = 0
                 endif
@@ -233,7 +247,7 @@ Function attemptAttack(Actor attacker, actor victim)
         Utility.Wait(0.1)
     endWhile
 
-    SetBarVisible(defeatBar, false)
+    defeatbar.SetBarVisible(false)
     
     ; On Struggle End
     if (Victory)
@@ -242,7 +256,7 @@ Function attemptAttack(Actor attacker, actor victim)
         if (PlayerAttacker)
             doTrauma(victim)
         else
-            PlayerAttackFailedEvent(attacker) ; maybe needs renaming to player defense failed?
+            PlayerDefenseFailedEvent(attacker) ; maybe needs renaming to player defense failed?
         endif
         StruggleDontMove(attacker, victim, playerattacker, false)
     else 
@@ -270,15 +284,15 @@ Function attemptAttack(Actor attacker, actor victim)
 EndFunction
 
 Function cycleDone() 
-    cycleCount += 1
-    if ostim.chanceRoll(33)
+    GameCompletionsSinceLastCheck += 1
+    if chanceRoll(33)
         Game.ShakeCamera(PlayerRef, afStrength = 1, afDuration = 0.3)
 
         
             actor damaged
             int damage
 
-            if ostim.chanceRoll(66) ;this fucking shit makes no sense
+            if chanceRoll(66) ;this fucking shit makes no sense
                 damaged = attackingactor
                 damage = 1
 
@@ -328,31 +342,40 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         endif
 
 		float[] CenterLocation = new float[6] ; Get coords of posref exactly.
-		CenterLocation[0] = posref.GetPositionX()
-		CenterLocation[1] = posref.GetPositionY()
-		CenterLocation[2] = posref.GetPositionZ()
-		CenterLocation[3] = posref.GetAngleX()
-		CenterLocation[4] = posref.GetAngleY()
-		CenterLocation[5] = posref.GetAngleZ()
+
+        float[] temp = OSANative.GetCoords(posref)
+		CenterLocation[0] = temp[0]
+		CenterLocation[1] = temp[1]
+		CenterLocation[2] = temp[2]
+		CenterLocation[3] = 21
+		CenterLocation[4] = 0
+		CenterLocation[5] = 240
 
         if (Attacker == PlayerRef) ; place and align attacker
-            CenterLocation[3] = 21 ; I think this is to align the actors to the same angle?
-            CenterLocation[4] = 0
-            CenterLocation[5] = 240
+  
 
-            int offset = OStim.RandomInt(20, 30)
-            Attacker.SetPosition(CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
+         
+
+            int offset = osanative.RandomInt(20, 30)
+            OSANative.SetPositionex( playerref, CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
             Attacker.SetAngle(CenterLocation[3] - 60, CenterLocation[4], CenterLocation[5] - offset)
 
             ConsoleUtil.ExecuteCommand("player.setangle x 10") ; first person camera allignment
+
+             
         else
-            Attacker.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 6)
+            Attacker.SetPosition(CenterLocation[0] + 5, CenterLocation[1] + 10, CenterLocation[2] + 6)
             Attacker.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
         endif
 
         ; Place and align victim.
         victim.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
-        victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
+        if (victim == PlayerRef)
+            OSANative.SetPositionEx(victim, CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
+        else 
+            victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
+        endif 
+       
 
         ; disable collision
         ostim.DisableCollision(victim)
@@ -413,16 +436,30 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
     endif
 EndFunction
 
-Function playerAttackFailedEvent(actor Act) 
-    ostim.AddSceneMetadata("odefeat")
-    ostim.AddSceneMetadata("odefeat_victim")
-    ostim.StartScene(act, playerref, Aggressive = true, AggressingActor = act)
+Function PlayerDefenseFailedEvent(actor aggressor) 
+    startscene(aggressor, playerref)
+
 endFunction
 
 Function StartScene(actor Dom, actor Sub)
     ostim.AddSceneMetadata("odefeat")
-    ostim.AddSceneMetadata("odefeat_aggressor")
-    Ostim.StartScene(dom, sub, Aggressive = True, AggressingActor = dom)
+
+    bool npcScene = false
+
+    if dom == PlayerRef
+        ostim.AddSceneMetadata("odefeat_aggressor")
+    elseif sub == PlayerRef
+        ostim.AddSceneMetadata("odefeat_victim")
+    else 
+        ostim.AddSceneMetadata("odefeat_npc")
+        npcscene = true
+    endif 
+
+    if !npcScene
+        Ostim.StartScene(dom, sub, Aggressive = True, AggressingActor = dom)
+    else 
+        ostim.GetUnusedSubthread().StartScene(dom, sub, isaggressive = true, aggressingActor = dom, LinkToMain = true)
+    endif 
 EndFunction
 
 ; ██╗  ██╗███████╗██╗   ██╗██████╗ ██╗███╗   ██╗██████╗ ███████╗
@@ -469,15 +506,22 @@ Bool Function doTrauma(Actor target, bool enter = true)
     if (target.IsDead() || Target == PlayerRef)
         return false
     endif
+
     doCalm(target)
+
     if (Enter)
-        Target.EvaluatePackage() ; Why do we do this? We aren't applying any new packages.
+        Target.EvaluatePackage() ; Why do we do this? We aren't applying any new packages. ; no idea
+
+        target.SetAngle(target.x, target.y, OSANative.RandomFloat(0.0, 359.9)) ;randomize laying pos.
+
         Debug.SendAnimationEvent(Target, "IdleWounded_02")
         Utility.Wait(1)
 
         if !Target.HasMagicEffect(ODefeatMagicEffect)       
                 ODefeatSpell.cast(Target)
         endif
+
+        
 
         int Tries = 3
         float X
@@ -567,6 +611,85 @@ Function stripActor(Actor target)
 		Return 
 	endif
 EndFunction
+
+
+
+Function stripItem(actor target, form item, bool doImpulse = true)
+    ; Strip a specific item from an actor.
+    if (item)
+        objectreference droppedItem = target.dropObject(item)
+        droppedItem.SetPosition(DroppedItem.GetPositionX(), DroppedItem.GetPositiony(), DroppedItem.GetPositionz() + 64)
+        if (doImpulse)
+            droppedItem.applyHavokImpulse(osanative.RandomFloat(-2.0, 2.0), osanative.RandomFloat(-2.0, 2.0), osanative.RandomFloat(0.2, 1.8), osanative.RandomFloat(10, 50))
+        endif
+        droppedItems[stripStage] = DroppedItem
+    endif
+    stripStage += 1
+endFunction
+
+
+Float Function getActorAttackDifficulty(actor target)
+    ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.    
+    ; Dificulty is clamped between 10 and 5 
+    if cheatMode 
+        return 0
+    endif 
+
+    float ret = 0
+    float levelRatio = ((target.GetLevel() as Float)/(playerref.GetLevel() as Float)) * 100
+    if (levelRatio > 140)
+        ret = 10.0
+    elseif (levelRatio > 125)
+        ret = 9.0
+    elseif (levelRatio > 100)
+        ret = 8.0
+    elseif (levelRatio > 70)
+        ret = 7.5
+    elseif (levelRatio > 35)
+        ret = 6.5
+    endif
+    if (target.IsBleedingOut())
+        ret -= 7.5
+    else
+        ret -= ((100.0 - (target.GetActorValuePercentage("Health") * 100)) / 40.0)
+    endif
+    if (!playerRef.IsDetectedBy(target))
+        ret -= 1.0
+    endif
+    if (!target.IsInCombat())
+        ret -= 1.0
+    endif
+    if target.GetSleepState() == 3
+		ret -= 1
+	endif
+    if (ret < 5.0)
+        ret = 5.0
+    endif
+    return ret
+endFunction
+
+Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
+    if ostim.HasSceneMetadata("odefeat_aggressor")
+        doTrauma(ostim.getsexpartner(ostim.GetAggressiveActor()), enter = true)
+    endif 
+EndEvent 
+
+; This just makes life easier sometimes.
+Function WriteLog(String OutputLog, bool error = false)
+    MiscUtil.PrintConsole("ODefeat: " + OutputLog)
+    Debug.Trace("ODefeat: " + OutputLog)
+    if (error == true)
+        Debug.Notification("ODefeat: " + OutputLog)
+    endIF
+EndFunction
+
+
+
+
+
+
+
+
 
 ;; Base State
 function GotoNextState()    
@@ -687,72 +810,3 @@ state StrippedArmor
     function GotoNextState()
     endFunction
 endState
-
-Function stripItem(actor target, form item, bool doImpulse = true)
-    ; Strip a specific item from an actor.
-    if (item)
-        objectreference droppedItem = target.dropObject(item)
-        droppedItem.SetPosition(DroppedItem.GetPositionX(), DroppedItem.GetPositiony(), DroppedItem.GetPositionz() + 64)
-        if (doImpulse)
-            droppedItem.applyHavokImpulse(Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(-2.0, 2.0), Utility.RandomFloat(0.2, 1.8), Utility.RandomFloat(10, 50))
-        endif
-        droppedItems[stripStage] = DroppedItem
-    endif
-    stripStage += 1
-endFunction
-
-
-Float Function getActorAttackDifficulty(actor target)
-    ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.    
-    ; Dificulty is clamped between 10 and 5 
-    if cheatMode 
-        return 0
-    endif 
-
-    float ret = 0
-    float levelRatio = ((target.GetLevel() as Float)/(playerref.GetLevel() as Float)) * 100
-    if (levelRatio > 140)
-        ret = 10.0
-    elseif (levelRatio > 125)
-        ret = 9.0
-    elseif (levelRatio > 100)
-        ret = 8.0
-    elseif (levelRatio > 70)
-        ret = 7.5
-    elseif (levelRatio > 35)
-        ret = 6.5
-    endif
-    if (target.IsBleedingOut())
-        ret -= 7.5
-    else
-        ret -= ((100.0 - (target.GetActorValuePercentage("Health") * 100)) / 40.0)
-    endif
-    if (!playerRef.IsDetectedBy(target))
-        ret -= 1.0
-    endif
-    if (!target.IsInCombat())
-        ret -= 1.0
-    endif
-    if target.GetSleepState() == 3
-		ret -= 1
-	endif
-    if (ret < 5.0)
-        ret = 5.0
-    endif
-    return ret
-endFunction
-
-Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
-    if ostim.HasSceneMetadata("odefeat_aggressor")
-        doTrauma(ostim.getsexpartner(ostim.GetAggressiveActor()), enter = true)
-    endif 
-EndEvent 
-
-; This just makes life easier sometimes.
-Function WriteLog(String OutputLog, bool error = false)
-    MiscUtil.PrintConsole("ODefeat: " + OutputLog)
-    Debug.Trace("ODefeat: " + OutputLog)
-    if (error == true)
-        Debug.Notification("ODefeat: " + OutputLog)
-    endIF
-EndFunction

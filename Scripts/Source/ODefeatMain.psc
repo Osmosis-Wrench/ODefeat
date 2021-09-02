@@ -276,8 +276,6 @@ Function attemptAttack(Actor attacker, actor victim)
 
     if (!PlayerAttacker)
         PlayerRef.SetDontMove(false)
-        Utility.Wait(2.0)
-        toggleCombat()
     endIf
 
     attackRunning = false
@@ -437,8 +435,66 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
 EndFunction
 
 Function PlayerDefenseFailedEvent(actor aggressor) 
+    bool bUseFades = ostim.UseFades
+    ostim.UseFades = false
+    ostim.FadeToBlack()
+
     startscene(aggressor, playerref)
 
+    actor[] followers = outils.GetActiveNearbyPlayerFollowers()
+    Console("Follwers: " + followers.Length)
+
+    if followers.Length > 0
+        actor[] allNearby = GetNearbyActors(playerref)
+
+        ;remove player and followers 
+        allNearby = PapyrusUtil.RemoveActor(allNearby, PlayerRef)
+        allNearby = PapyrusUtil.RemoveActor(allNearby, aggressor)
+        int i = 0
+        int l = followers.Length
+        while i < l 
+            allNearby = PapyrusUtil.RemoveActor(allNearby, allNearby[i])
+
+            i += 1
+        EndWhile
+        allNearby = ShuffleActorArray(allNearby)
+
+        
+
+        i = 0
+        l = followers.Length
+        while (i < l) 
+            bool found = false 
+
+            int j = 0
+            int l2 = allNearby.Length
+            while j < l2 
+                actor target = allNearby[j].GetCombatTarget()
+                if (target.IsPlayerTeammate()) || (target == PlayerRef) 
+                    j = l2 
+                    found = true
+
+                    allNearby[j].moveto(followers[i])
+                    StartScene(allNearby[j], followers[i])
+                    Console("Partner found for follwer: " + allNearby[j].GetDisplayName())
+                endif 
+
+                j += 1
+            endwhile
+
+            if !found 
+                Console("No partner found")
+                dotrauma(followers[i])
+            endif 
+
+            i += 1
+        EndWhile 
+    endif 
+
+    ostim.FadeFromBlack()
+
+    Utility.Wait(3)
+    ostim.UseFades = bUseFades
 endFunction
 
 Function StartScene(actor Dom, actor Sub)
@@ -451,7 +507,6 @@ Function StartScene(actor Dom, actor Sub)
     elseif sub == PlayerRef
         ostim.AddSceneMetadata("odefeat_victim")
     else 
-        ostim.AddSceneMetadata("odefeat_npc")
         npcscene = true
     endif 
 
@@ -671,6 +726,7 @@ endFunction
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
     if ostim.HasSceneMetadata("odefeat_aggressor")
         doTrauma(ostim.getsexpartner(ostim.GetAggressiveActor()), enter = true)
+        toggleCombat() ; todo, better
     endif 
 EndEvent 
 

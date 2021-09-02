@@ -43,7 +43,7 @@ int minigame1KeyCode = 54 ;rightshift
 int endAttackKeyCode = 57 ;spacebar
 
 
-
+; todo fix cam on player victim
 
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
@@ -444,43 +444,33 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
     startscene(aggressor, playerref)
 
-    actor[] followers = outils.FilterToPlayerFollowers(GetNearbyActors())
+    ;actor[] followers = outils.FilterToPlayerFollowers(GetNearbyActors())
+    actor[] followers = GetCombatAllies(playerref) ;todo test
    
 
     if followers.Length > 0
         console("Player has followers")
 
-        actor[] allNearby = GetNearbyActors()
+        actor[] allNearbyEnemies = GetCombatTargets(PlayerRef)
 
         ;remove player and followers 
-        allNearby = PapyrusUtil.RemoveActor(allNearby, PlayerRef)
-        allNearby = PapyrusUtil.RemoveActor(allNearby, aggressor)
+        allNearbyEnemies = PapyrusUtil.RemoveActor(allNearbyEnemies, aggressor)
+        allNearbyEnemies = ShuffleActorArray(allNearbyEnemies)
+
+
         int i = 0
         int l = followers.Length
-        while i < l 
-            allNearby = PapyrusUtil.RemoveActor(allNearby, followers[i])
-
-            i += 1
-        EndWhile
-        allNearby = ShuffleActorArray(allNearby)
-
-
-        
-
-        i = 0
-        l = followers.Length
         while (i < l) 
             bool found = false 
 
             int j = 0
-            int l2 = allNearby.Length
+            int l2 = allNearbyEnemies.Length
             while j < l2 
-                actor char = allNearby[j]
-                actor target = char.GetCombatTarget() ; todo change?
-                if ((target.IsPlayerTeammate()) || (target == PlayerRef) ) && isValidAttackTarget(char)
+                actor char = allNearbyEnemies[j]
+                if isValidAttackTarget(char)
                     j = l2 
                     found = true
-                    allNearby = PapyrusUtil.RemoveActor(allNearby, char)
+                    allNearbyEnemies = PapyrusUtil.RemoveActor(allNearbyEnemies, char)
 
                     char.moveto(followers[i])
                     StartScene(char, followers[i])

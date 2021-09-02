@@ -1,5 +1,6 @@
 Scriptname ODefeatMain extends Quest 
 import outils 
+import po3_SKSEFunctions
 
 Actor Property PlayerRef Auto  
 ODefeatMCM Property ODefMCM Auto
@@ -437,15 +438,19 @@ EndFunction
 Function PlayerDefenseFailedEvent(actor aggressor) 
     bool bUseFades = ostim.UseFades
     ostim.UseFades = false
+    bool bAutoFades = ostim.UseAutoFades
+    ostim.UseAutoFades = false
     ostim.FadeToBlack()
 
     startscene(aggressor, playerref)
 
-    actor[] followers = outils.GetActiveNearbyPlayerFollowers()
-    Console("Follwers: " + followers.Length)
+    actor[] followers = outils.FilterToPlayerFollowers(GetNearbyActors())
+   
 
     if followers.Length > 0
-        actor[] allNearby = GetNearbyActors(playerref)
+        console("Player has followers")
+
+        actor[] allNearby = GetNearbyActors()
 
         ;remove player and followers 
         allNearby = PapyrusUtil.RemoveActor(allNearby, PlayerRef)
@@ -453,11 +458,12 @@ Function PlayerDefenseFailedEvent(actor aggressor)
         int i = 0
         int l = followers.Length
         while i < l 
-            allNearby = PapyrusUtil.RemoveActor(allNearby, allNearby[i])
+            allNearby = PapyrusUtil.RemoveActor(allNearby, followers[i])
 
             i += 1
         EndWhile
         allNearby = ShuffleActorArray(allNearby)
+
 
         
 
@@ -469,14 +475,16 @@ Function PlayerDefenseFailedEvent(actor aggressor)
             int j = 0
             int l2 = allNearby.Length
             while j < l2 
-                actor target = allNearby[j].GetCombatTarget()
-                if (target.IsPlayerTeammate()) || (target == PlayerRef) 
+                actor char = allNearby[j]
+                actor target = char.GetCombatTarget() ; todo change?
+                if ((target.IsPlayerTeammate()) || (target == PlayerRef) ) && isValidAttackTarget(char)
                     j = l2 
                     found = true
+                    allNearby = PapyrusUtil.RemoveActor(allNearby, char)
 
-                    allNearby[j].moveto(followers[i])
-                    StartScene(allNearby[j], followers[i])
-                    Console("Partner found for follwer: " + allNearby[j].GetDisplayName())
+                    char.moveto(followers[i])
+                    StartScene(char, followers[i])
+                    Console("Partner found : " + char.GetDisplayName())
                 endif 
 
                 j += 1
@@ -489,13 +497,20 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
             i += 1
         EndWhile 
+    else 
+        console("Player has no followers")
     endif 
 
     ostim.FadeFromBlack()
 
     Utility.Wait(3)
     ostim.UseFades = bUseFades
+    ostim.UseAutoFades = bAutoFades
 endFunction
+
+actor[] function GetNearbyActors()
+    return GetActorsByProcessingLevel(0)
+endfunction
 
 Function StartScene(actor Dom, actor Sub)
     ostim.AddSceneMetadata("odefeat")
@@ -630,7 +645,7 @@ endFunction
 
 Bool Function isValidAttackTarget(actor target)
     ; Returns if actor is valid attack target.
-    If (!Target.IsChild())
+    If (!outils.IsChild(target))
         If (Target.HasKeywordString("ActorTypeNPC"))
             If (!Target.HasKeywordString("ActorTypeCreature"))
                 Return True

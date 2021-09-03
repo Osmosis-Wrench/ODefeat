@@ -17,6 +17,11 @@ Spell property ODefeatSpell auto
 MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
+
+bool bResetPosAfterEnd
+
+actor[] calmed
+
 int stripStage
 Float attackStatus
 bool attackComplete
@@ -42,8 +47,9 @@ int minigame0KeyCode = 42 ;leftshift
 int minigame1KeyCode = 54 ;rightshift
 int endAttackKeyCode = 57 ;spacebar
 
+actor[] savedFollowers
 
-; todo fix cam on player victim
+; todo fix freecam on player victim
 
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
@@ -91,6 +97,7 @@ EndFunction
 
 Event OnGameLoad()
     RegisterForModEvent("ostim_end", "OstimEnd")
+    RegisterForModEvent("ostim_totalend", "OstimTotalEnd")
     attackRunning = false
 
      ; Register for keypress events. I'm not sure what all of these do yet.
@@ -251,16 +258,16 @@ Function attemptAttack(Actor attacker, actor victim)
     defeatbar.SetBarVisible(false)
     
     ; On Struggle End
-    if (Victory)
-        runStruggleAnim(attacker, victim, false, true)
-        StruggleDontMove(attacker, victim, playerattacker, true)
+    if (Victory) ; the attacker won
+        runStruggleAnim(attacker, victim, false, (attacker == PlayerRef))
+        attacker.SetDontMove(true)
         if (PlayerAttacker)
             doTrauma(victim)
         else
-            PlayerDefenseFailedEvent(attacker) ; maybe needs renaming to player defense failed?
+            PlayerDefenseFailedEvent(attacker)
         endif
-        StruggleDontMove(attacker, victim, playerattacker, false)
-    else 
+        attacker.SetDontMove(false)
+    else ; fail
         runStruggleAnim(attacker, victim, false, false, true)
         Attacker.PushActorAway(victim, 0) ;seems to fail on some actors?
         Victim.PushActorAway(Attacker, 3)
@@ -270,14 +277,13 @@ Function attemptAttack(Actor attacker, actor victim)
             victim.StartCombat(attacker)
 			victim.DrawWeapon()
         else
+            PlayerRef.SetDontMove(false)
             attacker.StartCombat(attacker)
 			attacker.DrawWeapon()
         endif
     endif
 
-    if (!PlayerAttacker)
-        PlayerRef.SetDontMove(false)
-    endIf
+
 
     attackRunning = false
 EndFunction
@@ -339,6 +345,8 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         else
             (posRef).MoveTo(Victim)
         endif
+
+        MoveToNearestNavmeshLocation(posref)
 
 		float[] CenterLocation = new float[6] ; Get coords of posref exactly.
 
@@ -435,6 +443,103 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
     endif
 EndFunction
 
+Function MoveToSafeSpot()
+    Game.FadeOutGame(False, True, 25.0, 25.0)
+    SetUIVisible(false)
+    SetSkyUIWidgetsVisible(false)
+
+
+    cell currCell = playerref.GetParentCell()
+
+    if currCell.isinterior()
+        location currLocation = playerref.GetCurrentLocation()
+        ObjectReference marker = OSANative.GetLocationMarker(currLocation)
+
+       ; Console(currLocation.GetName())
+       ; console(marker)
+
+        bool exit = false
+        while (marker.IsInInterior() || marker == none) && !exit
+            currLocation = GetParentLocation(currLocation)
+            if currLocation
+                Console(currLocation.GetName())
+                marker = OSANative.GetLocationMarker(currLocation)
+            else 
+                Console("Warning: no safe location found")
+                exit = true
+            endif 
+        endwhile 
+
+        if marker 
+            PlayerRef.moveto(marker)
+            Game.FadeOutGame(False, True, 25.0, 25.0)
+        endif 
+    endif  
+    
+    cell[] cells = GetAttachedCells()
+
+    cell TargetCell
+
+    int i = 0
+    int l = cells.Length
+    while i < l 
+        location loc = CellToLocation(cells[i])
+
+       ; Console(loc)
+
+        if loc == none 
+            TargetCell = cells[i]
+            l = cells.Length
+        endif 
+         
+        i += 1
+    endwhile
+
+    if !TargetCell
+        targetcell = cells[osanative.randomint(0, cells.Length - 1)]
+    endif 
+
+    playerref.MoveTo(TargetCell.GetNthRef(0))
+    Game.FadeOutGame(False, True, 25.0, 25.0)
+
+
+    MoveToNearestNavmeshLocation(PlayerRef)
+    Game.FadeOutGame(False, True, 25.0, 25.0)
+
+    if savedFollowers.Length > 0
+        i = 0 
+        while i < savedFollowers.Length
+            savedFollowers[i].MoveTo(PlayerRef, OSANative.RandomFloat(-512, 512), OSANative.RandomFloat(-512, 512), abMatchRotation = false)
+            MoveToNearestNavmeshLocation(savedFollowers[i])
+
+            savedFollowers[i].PushActorAway(savedFollowers[i], 0.1)
+            i += 1
+        EndWhile
+    endif 
+
+    if isinfirstperson()
+
+        game.ForceFirstPerson()
+       ; Console("in first person")
+        debug.SendAnimationEvent(playerref, "TG05_GetUp")
+    else 
+        ;Console("not in first person")
+        PlayerRef.PushActorAway(playerref, 0.1)
+    endif 
+
+    ostim.FadeFromBlack(6.0)
+    Utility.Wait(6.5)
+
+    SetUIVisible(true)
+    SetSkyUIWidgetsVisible(true)
+
+    debug.Notification("You were dumped nearby")
+EndFunction
+
+location Function CellToLocation(cell c)
+    return c.GetNthRef(0).GetCurrentLocation()
+EndFunction
+
 Function PlayerDefenseFailedEvent(actor aggressor) 
     bool bUseFades = ostim.UseFades
     ostim.UseFades = false
@@ -444,8 +549,7 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
     startscene(aggressor, playerref)
 
-    ;actor[] followers = outils.FilterToPlayerFollowers(GetNearbyActors())
-    actor[] followers = GetCombatAllies(playerref) ;todo test
+    actor[] followers = GetCombatAllies(playerref)
    
 
     if followers.Length > 0
@@ -462,6 +566,20 @@ Function PlayerDefenseFailedEvent(actor aggressor)
         int l = followers.Length
         while (i < l) 
             bool found = false 
+
+            if followers[i].GetDistance(PlayerRef) < 256
+                float sign
+                if ChanceRoll(50)
+                    sign = -1.0
+                else 
+                    sign = 1.0
+                endif 
+
+                followers[i].MoveTo(PlayerRef, afXOffset = (OSANative.RandomFloat(256.0, 1024.0) * sign), afYOffset = (OSANative.RandomFloat(256.0, 1024.0) * sign), abmatchrotation = false)
+                MoveToNearestNavmeshLocation(followers[i])
+            endif 
+
+            RandomizeAngle(followers[i])
 
             int j = 0
             int l2 = allNearbyEnemies.Length
@@ -511,6 +629,13 @@ Function StartScene(actor Dom, actor Sub)
         ostim.AddSceneMetadata("odefeat_aggressor")
     elseif sub == PlayerRef
         ostim.AddSceneMetadata("odefeat_victim")
+        ostim.SkipEndingFadein = true
+        PlayerRef.SetDontMove(false)
+        savedFollowers = GetCombatAllies(PlayerRef)
+        savedFollowers = PapyrusUtil.RemoveActor(savedFollowers, PlayerRef)
+        MassCalm(GetCombatTargets(playerref))
+        bResetPosAfterEnd = ostim.ResetPosAfterSceneEnd
+        ostim.ResetPosAfterSceneEnd = false 
     else 
         npcscene = true
     endif 
@@ -572,7 +697,7 @@ Bool Function doTrauma(Actor target, bool enter = true)
     if (Enter)
         Target.EvaluatePackage() ; Why do we do this? We aren't applying any new packages. ; no idea
 
-        target.SetAngle(target.x, target.y, OSANative.RandomFloat(0.0, 359.9)) ;randomize laying pos.
+        RandomizeAngle(target) ;randomize laying pos.
 
         Debug.SendAnimationEvent(Target, "IdleWounded_02")
         Utility.Wait(1)
@@ -608,6 +733,10 @@ Bool Function doTrauma(Actor target, bool enter = true)
     return false
 EndFunction
 
+Function RandomizeAngle(actor target)
+    target.SetAngle(target.GetAngleX(), target.GetAngleY(), OSANative.RandomFloat(0.0, 359.9)) 
+endfunction
+
 Bool Function doCalm(Actor target, bool dontMove = true, bool enter = true)
     if (Enter)
         if (!Target.IsInFaction(CalmFaction))
@@ -632,6 +761,28 @@ Bool Function doCalm(Actor target, bool dontMove = true, bool enter = true)
     endif
     return false
 endFunction
+
+Event MassCalm(actor[] acts)
+    calmed = acts 
+
+    int i = 0
+    int l = calmed.Length
+    while i < l 
+        docalm(calmed[i], dontMove = false, enter = true)
+
+        i += 1
+    endwhile
+EndEvent
+
+Event UndoMassCalm()
+    int i = 0
+    int l = calmed.Length
+    while i < l 
+        docalm(calmed[i], dontMove = false, enter = false)
+
+        i += 1
+    endwhile
+EndEvent
 
 Bool Function isValidAttackTarget(actor target)
     ; Returns if actor is valid attack target.
@@ -731,9 +882,25 @@ endFunction
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
     if ostim.HasSceneMetadata("odefeat_aggressor")
         doTrauma(ostim.getsexpartner(ostim.GetAggressiveActor()), enter = true)
-        toggleCombat() ; todo, better
-    endif 
+    endif
 EndEvent 
+
+Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
+    if ostim.HasSceneMetadata("odefeat_victim")
+        Utility.Wait(2)
+
+        MoveToSafeSpot()
+
+        toggleCombat() ; todo, better
+
+        OSANative.SendEvent(self, "UndoMassCalm")
+
+        ostim.SkipEndingFadein = false
+
+        ostim.ResetPosAfterSceneEnd = bResetPosAfterEnd
+    endif 
+EndEvent
+
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)

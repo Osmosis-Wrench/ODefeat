@@ -37,7 +37,6 @@ EndProperty
 
 bool bResetPosAfterEnd
 
-actor[] calmed
 
 int stripStage
 Float attackStatus
@@ -227,7 +226,7 @@ Function attemptAttack(Actor attacker, actor victim)
         defeatBar.setPercent(0.80)
         AttackStatus = 80.0
         PlayerRef.SetDontMove(True)
-        ToggleCombat()
+        EnableCombat(false)
     EndIf
 
     attackComplete = False
@@ -320,7 +319,9 @@ Function attemptAttack(Actor attacker, actor victim)
             struggleActorPreventMove(PlayerRef, false)
             attacker.StartCombat(attacker)
 			attacker.DrawWeapon()
-            ToggleCombat()
+
+            PlayerRef.CreateDetectionEvent(PlayerRef, 90)
+            EnableCombat(true)
         endif
     endif
 
@@ -614,7 +615,7 @@ Function PlayerDefenseFailedEvent(actor aggressor)
     if followers.Length > 0
         console("Player has followers")
 
-        actor[] allNearbyEnemies = GetCombatTargets(PlayerRef)
+        actor[] allNearbyEnemies = lastKnownEnemies
 
         ;remove player and followers 
         allNearbyEnemies = PapyrusUtil.RemoveActor(allNearbyEnemies, aggressor)
@@ -699,7 +700,6 @@ Function StartScene(actor Dom, actor Sub)
         PlayerRef.SetDontMove(false)
         savedFollowers = GetCombatAllies(PlayerRef)
         savedFollowers = PapyrusUtil.RemoveActor(savedFollowers, PlayerRef)
-        MassCalm(GetCombatTargets(playerref))
         bResetPosAfterEnd = ostim.ResetPosAfterSceneEnd
         ostim.ResetPosAfterSceneEnd = false 
         playerref.RestoreActorValue("health", 30 + (math.abs(PlayerRef.GetActorValue("health"))))
@@ -752,6 +752,43 @@ EndFunction
 Function toggleCombat() 
     ; Huge hack.
     ConsoleUtil.ExecuteCommand("tcai")
+
+EndFunction
+
+Function EnableCombat(bool enable)
+    Console("toggling")
+    if enable 
+        SetInvisibleToEnemies(playerref, false)
+        
+    else 
+        SetInvisibleToEnemies(playerref, true)
+        StopFighting()
+        
+    endif 
+EndFunction
+
+Function SetInvisibleToEnemies(actor act, bool invis)
+    if invis
+        PreventActorDetecting(act)
+        PreventActorDetection(act)
+        act.SetGhost(true)
+    else 
+        ResetActorDetection(act)
+        resetactordetecting(act)
+        act.SetGhost(false)
+    endif 
+EndFunction
+
+actor[] lastKnownEnemies
+Function StopFighting()
+    lastKnownEnemies = GetCombatTargets(PlayerRef)
+    int i = 0
+    int max = lastKnownEnemies.Length
+    while i < max 
+        lastKnownEnemies[i].StopCombatAlarm()
+
+        i += 1
+    endwhile 
 EndFunction
 
 Bool Function doTrauma(Actor target, bool enter = true)
@@ -829,27 +866,6 @@ Bool Function doCalm(Actor target, bool dontMove = true, bool enter = true)
     return false
 endFunction
 
-Event MassCalm(actor[] acts)
-    calmed = acts 
-
-    int i = 0
-    int l = calmed.Length
-    while i < l 
-        docalm(calmed[i], dontMove = false, enter = true)
-
-        i += 1
-    endwhile
-EndEvent
-
-Event UndoMassCalm()
-    int i = 0
-    int l = calmed.Length
-    while i < l 
-        docalm(calmed[i], dontMove = false, enter = false)
-
-        i += 1
-    endwhile
-EndEvent
 
 Bool Function isValidAttackTarget(actor target)
     ; Returns if actor is valid attack target.
@@ -956,7 +972,7 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
 
         MoveToSafeSpot()
 
-        toggleCombat() ; todo, better
+        EnableCombat(true) ; todo, better
 
         OSANative.SendEvent(self, "UndoMassCalm")
 

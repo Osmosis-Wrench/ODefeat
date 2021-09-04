@@ -762,7 +762,6 @@ Function EnableCombat(bool enable)
         
     else 
         SetInvisibleToEnemies(playerref, true)
-        StopFighting()
         
     endif 
 EndFunction
@@ -779,17 +778,8 @@ Function SetInvisibleToEnemies(actor act, bool invis)
     endif 
 EndFunction
 
-actor[] lastKnownEnemies
-Function StopFighting()
-    lastKnownEnemies = GetCombatTargets(PlayerRef)
-    int i = 0
-    int max = lastKnownEnemies.Length
-    while i < max 
-        lastKnownEnemies[i].StopCombatAlarm()
+actor[] lastKnownEnemies ; todo remove if possible
 
-        i += 1
-    endwhile 
-EndFunction
 
 Bool Function doTrauma(Actor target, bool enter = true)
     if (target.IsDead() || Target == PlayerRef)

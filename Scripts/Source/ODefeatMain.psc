@@ -18,7 +18,7 @@ MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
 
-bool Property EnablePlayerVictim
+bool Property EnablePlayerVictim ;todo mcm
     bool Function Get()
         return (GetNthAlias(0) as ODefeatPlayer).EnableVictim
     EndFunction
@@ -69,7 +69,6 @@ actor[] savedFollowers
 int property DefeatedAssaultChance auto ; todo mcm
 
 ; todo fix freecam on player victim
-; bug - player cannot draw weapons after surviving victim scene (maybe after losing victim scene too?)
 
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
@@ -241,6 +240,8 @@ Function attemptAttack(Actor attacker, actor victim)
     defeatbar.SetBarVisible( true)
 
     RunStruggleAnim(attacker, victim) 
+
+    droppedItems = PapyrusUtil.ObjRefArray(6, none) ; reset clothes cache
     
     while (!attackComplete)
         if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
@@ -269,7 +270,7 @@ Function attemptAttack(Actor attacker, actor victim)
                 endif
             endif
             
-            if (attackStatus > GetNextAttackStatusStripThreshold())
+            if (attackStatus > GetNextAttackStatusStripThreshold()) && (victim != PlayerRef)
                 stripItem(Victim, GetNextStripItem(Victim))
                 GoToNextState()
             endif
@@ -289,11 +290,13 @@ Function attemptAttack(Actor attacker, actor victim)
     
     ; On Struggle End
     if (Victory) ; the attacker won
-        runStruggleAnim(attacker, victim, false, (attacker == PlayerRef))
-        attacker.SetDontMove(true)
+        
         if (PlayerAttacker) ; player won against an npc
+            runStruggleAnim(attacker, victim, false, true)
             doTrauma(victim)
         else ; player is Defeated
+            attacker.SetDontMove(true)
+
             PlayerDefenseFailedEvent(attacker)
         endif
         attacker.SetDontMove(false)
@@ -302,8 +305,7 @@ Function attemptAttack(Actor attacker, actor victim)
         runStruggleAnim(attacker, victim, false, false, true)
         if PlayerAttacker
             Attacker.PushActorAway(victim, 0) ;seems to fail on some actors?
-        else 
-            debug.SendAnimationEvent(victim, "IdleForceDefaultState")
+        
         endif 
         Victim.PushActorAway(Attacker, 3)
 
@@ -313,8 +315,9 @@ Function attemptAttack(Actor attacker, actor victim)
             victim.StartCombat(attacker)
 			victim.DrawWeapon()
         else ; player escaped alive
-            playerref.RestoreActorValue("health", playerref.GetActorValueMax("health") / 2.0)
+            playerref.RestoreActorValue("health", (playerref.GetBaseActorValue("health") / 2.0) +  (math.abs( PlayerRef.GetActorValue("health") )))
             PlayerRef.SetDontMove(false)
+            struggleActorPreventMove(PlayerRef, false)
             attacker.StartCombat(attacker)
 			attacker.DrawWeapon()
             ToggleCombat()
@@ -391,45 +394,56 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         float[] temp = OSANative.GetCoords(posref)
 		CenterLocation[0] = temp[0]
 		CenterLocation[1] = temp[1]
-		CenterLocation[2] = temp[2]
+		CenterLocation[2] = temp[2] + 5 
 		CenterLocation[3] = 21
 		CenterLocation[4] = 0
 		CenterLocation[5] = 240
+
+        float terrainMagnetOffset = 0.0
+        float terrainMagnetOffsetHeight = 0.0
+
+        if GetObjectUnderFeet(PlayerRef) == none 
+            Console("odefeat alignment warning")
+            Console(GetObjectUnderFeet(PlayerRef))
+
+            CenterLocation[2] = CenterLocation[2] + 33
+        else 
+            if victim == PlayerRef
+                terrainMagnetOffset = 5.0
+                terrainMagnetOffsetHeight = -5.0
+            endif
+        endif 
 
         if (Attacker == PlayerRef) ; place and align attacker
   
 
          
+                        
+
 
             int offset = osanative.RandomInt(20, 30)
-            OSANative.SetPositionex( playerref, CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] + 6)
+            attacker.SetPosition(CenterLocation[0], CenterLocation[1] - 15, CenterLocation[2] )
             Attacker.SetAngle(CenterLocation[3] - 60, CenterLocation[4], CenterLocation[5] - offset)
 
             ConsoleUtil.ExecuteCommand("player.setangle x 10") ; first person camera allignment
 
+
              
         else
-            Attacker.SetPosition(CenterLocation[0] + 5, CenterLocation[1] + 10, CenterLocation[2] + 6)
+            Attacker.SetPosition(CenterLocation[0] + 5 + terrainMagnetOffset, CenterLocation[1] + 10, CenterLocation[2])
             Attacker.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
         endif
 
         ; Place and align victim.
         victim.SetAngle(CenterLocation[3], CenterLocation[4], CenterLocation[5])
-        if (victim == PlayerRef)
-            OSANative.SetPositionEx(victim, CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
-        else 
-            victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + 5)
-        endif 
+        victim.SetPosition(CenterLocation[0], CenterLocation[1], CenterLocation[2] + terrainMagnetOffsetHeight)
        
 
-        ; disable collision
-        ostim.DisableCollision(victim)
-        ostim.DisableCollision(attacker)
+ 
 
         ; Parent actors to posref.
         Victim.SetVehicle(posref)
         Attacker.SetVehicle(posref)
-
         ; Start Struggle anim.
         Debug.SendAnimationEvent(Victim, "Leito_nc_missionary_A1_S1")
         Debug.SendAnimationEvent(Attacker, "Leito_nc_missionary_A2_S1")
@@ -443,9 +457,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         Victim.SetVehicle(none)
         Attacker.SetVehicle(none)
 
-        ;reenable collision
-        ostim.EnableCollision(victim)
-        ostim.EnableCollision(attacker)
+
 
         if (!noIdle)
             Debug.SendAnimationEvent(attacker, "IdleForceDefaultState")
@@ -458,11 +470,14 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
     endif
 EndFunction
 
+
+
 Function struggleActorPreventMove(Actor act, bool preventMove)
     if (PreventMove)
         if (act == PlayerRef)
             Game.SetPlayerAiDriven()
             Game.ForceThirdPerson()
+            act.SetDontMove(true)
         else
             ActorUtil.AddPackageOverride(act, DoNothing, 100, 1)
             act.EvaluatePackage()
@@ -470,15 +485,19 @@ Function struggleActorPreventMove(Actor act, bool preventMove)
             act.SetDontMove(true)
         endif
 
+
     else
         if (act == PlayerRef)
             Game.SetPlayerAiDriven(False)
+            act.SetDontMove(false)
         else
             act.SetRestrained(False)
             act.SetDontMove(false)
             ActorUtil.RemovePackageOverride(act, DoNothing)
         endif
+
     endif
+
 EndFunction
 
 Function MoveToSafeSpot()
@@ -558,10 +577,10 @@ Function MoveToSafeSpot()
     if isinfirstperson()
 
         game.ForceFirstPerson()
-       ; Console("in first person")
+        Console("in first person")
         debug.SendAnimationEvent(playerref, "TG05_GetUp")
     else 
-        ;Console("not in first person")
+        Console("not in first person")
         PlayerRef.PushActorAway(playerref, 0.1)
     endif 
 
@@ -584,6 +603,8 @@ Function PlayerDefenseFailedEvent(actor aggressor)
     bool bAutoFades = ostim.UseAutoFades
     ostim.UseAutoFades = false
     ostim.FadeToBlack()
+
+    runStruggleAnim(aggressor, PlayerRef, false, false)
 
     startscene(aggressor, playerref)
 
@@ -647,6 +668,12 @@ Function PlayerDefenseFailedEvent(actor aggressor)
         console("Player has no followers")
     endif 
 
+    Utility.Wait(0.5)
+    while (!ostim.IsActorActive(PlayerRef)) && ostim.AnimationRunning()
+        Utility.Wait(0.5)
+    endwhile
+
+
     ostim.FadeFromBlack()
 
     Utility.Wait(3)
@@ -667,6 +694,7 @@ Function StartScene(actor Dom, actor Sub)
         ostim.AddSceneMetadata("odefeat_aggressor")
     elseif sub == PlayerRef
         ostim.AddSceneMetadata("odefeat_victim")
+
         ostim.SkipEndingFadein = true
         PlayerRef.SetDontMove(false)
         savedFollowers = GetCombatAllies(PlayerRef)
@@ -674,6 +702,7 @@ Function StartScene(actor Dom, actor Sub)
         MassCalm(GetCombatTargets(playerref))
         bResetPosAfterEnd = ostim.ResetPosAfterSceneEnd
         ostim.ResetPosAfterSceneEnd = false 
+        playerref.RestoreActorValue("health", 30 + (math.abs(PlayerRef.GetActorValue("health"))))
     else 
         npcscene = true
     endif 
@@ -918,9 +947,7 @@ Float Function getActorAttackDifficulty(actor target)
 endFunction
 
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
-    if ostim.HasSceneMetadata("odefeat_aggressor")
-        doTrauma(ostim.getsexpartner(ostim.GetAggressiveActor()), enter = true)
-    endif
+   
 EndEvent 
 
 Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
@@ -967,11 +994,9 @@ form function GetNextStripItem(actor target)
 endFunction
 
 float function GetNextAttackStatusStripThreshold()
-    if(playerattacker)
-            return 20
-        else
-            return 84
-        endif
+
+     return 20
+
 endfunction
 ;;
 
@@ -981,11 +1006,9 @@ state StrippedHelmet
     endFunction
 
     float function GetNextAttackStatusStripThreshold()
-        if(playerattacker)
+  
                 return 40
-            else
-                return 87
-            endif
+ 
     endfunction
 
     function GotoNextState()
@@ -999,11 +1022,9 @@ state StrippedGauntlets
     endFunction
 
     float function GetNextAttackStatusStripThreshold()
-        if(playerattacker)
+ 
                 return 60
-            else
-                return 91
-            endif
+ 
     endfunction
     
     function GotoNextState()
@@ -1017,11 +1038,9 @@ state StrippedFeet
     endFunction
 
     float function GetNextAttackStatusStripThreshold()
-        if(playerattacker)
-                return 80
-            else
-                return 94
-            endif
+ 
+        return 80
+ 
     endfunction
 
     function GotoNextState()
@@ -1035,11 +1054,7 @@ state StrippedLeftHand
     endFunction
 
     float function GetNextAttackStatusStripThreshold()
-        if(playerattacker)
-                return 90
-            else
-                return 96
-            endif
+        return 90
     endfunction
 
     function GotoNextState()
@@ -1053,11 +1068,9 @@ state StrippedRightHand
     endFunction
 
     float function GetNextAttackStatusStripThreshold()
-        if(playerattacker)
-                return 95
-            else
-                return 98
-            endif
+ 
+        return 95
+
     endfunction
 
     function GotoNextState()

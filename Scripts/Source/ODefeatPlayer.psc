@@ -10,6 +10,12 @@ Event OnInit()
 	pause = false
 	playerref = game.GetPlayer()
 	odefeat = odefeatmain.GetODefeat()
+
+	OnPlayerLoadGame()
+EndEvent
+
+Event OnPlayerLoadGame()
+	RegisterForAnimationEvent(playerref, "JumpLandEnd")
 EndEvent
 
 Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
@@ -17,10 +23,12 @@ Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile,
 		return 
 	endif
 	
-	float healthPercent = playerref.GetActorValuePercentage("health")
 	if playerref.IsInKillMove()
-		healthPercent = -0.5
+		playerref.DamageAV("health", 30.0)
 	endif 
+
+	float healthPercent = playerref.GetActorValuePercentage("health")
+	
 
 	if (healthPercent < 0.0) && !pause
 		pause = true 
@@ -29,6 +37,19 @@ Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile,
 		HandlePlayerDeath()
 
 		pause = false
+	endif 
+EndEvent
+
+Event OnAnimationEvent(ObjectReference akSource, string asEventName)
+	if pause || !EnableVictim
+		return 
+	endif
+
+	if asEventName == "JumpLandEnd"
+		float healthPercent = playerref.GetActorValuePercentage("health")
+		if (healthPercent < 0.0)
+			ODefeatMain.KillPlayer()
+		endif 
 	endif 
 EndEvent
 

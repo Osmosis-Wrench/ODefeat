@@ -18,6 +18,23 @@ MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
 
+bool Property EnablePlayerVictim
+    bool Function Get()
+        return (GetNthAlias(0) as ODefeatPlayer).EnableVictim
+    EndFunction
+
+    Function Set(bool Variable) ; todo mcm
+        if variable 
+            PlayerRef.StartDeferredKill()
+            (GetNthAlias(0) as ODefeatPlayer).EnableVictim = true
+        else 
+            PlayerRef.SetActorValue("health", 25.0)
+            PlayerRef.EndDeferredKill()
+            (GetNthAlias(0) as ODefeatPlayer).EnableVictim = false
+        endif 
+    EndFunction
+EndProperty
+
 bool bResetPosAfterEnd
 
 actor[] calmed
@@ -42,14 +59,17 @@ int warmupTime
 
 bool Property cheatMode = true auto ;TODO - disable for release
 
-int startAttackKeyCode = 34 ;g
-int minigame0KeyCode = 42 ;leftshift
-int minigame1KeyCode = 54 ;rightshift
-int endAttackKeyCode = 57 ;spacebar
+int startAttackKeyCode = 34 ;g ; todo mcm
+int minigame0KeyCode = 42 ;leftshift ; todo mcm
+int minigame1KeyCode = 54 ;rightshift ; todo mcm
+int endAttackKeyCode = 57 ;spacebar ; todo mcm
 
 actor[] savedFollowers
 
+int property DefeatedAssaultChance auto ; todo mcm
+
 ; todo fix freecam on player victim
+; bug - player cannot draw weapons after surviving victim scene (maybe after losing victim scene too?)
 
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
@@ -68,6 +88,14 @@ ODefeatMain Function GetODefeat() Global
     return outils.GetFormFromFile(0x12c5, "odefeat.esp")  as ODefeatMain
 endfunction
 
+Function KillPlayer() Global
+    actor player = game.GetPlayer()
+
+    ;debug.SendAnimationEvent(Player, "IdleForceDefaultState")
+    player.EndDeferredKill()
+    player.KillEssential()
+endfunction 
+
 Function startup()
 
 
@@ -76,7 +104,9 @@ Function startup()
     attackComplete = False ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
 
-    
+    EnablePlayerVictim = true
+
+    DefeatedAssaultChance = 100 ; todo mcm
 
     defeatBar = (Self as Quest) as Osexbar
     
@@ -261,25 +291,33 @@ Function attemptAttack(Actor attacker, actor victim)
     if (Victory) ; the attacker won
         runStruggleAnim(attacker, victim, false, (attacker == PlayerRef))
         attacker.SetDontMove(true)
-        if (PlayerAttacker)
+        if (PlayerAttacker) ; player won against an npc
             doTrauma(victim)
-        else
+        else ; player is Defeated
             PlayerDefenseFailedEvent(attacker)
         endif
         attacker.SetDontMove(false)
-    else ; fail
+    else ; victim won
+        Console("victim won")
         runStruggleAnim(attacker, victim, false, false, true)
-        Attacker.PushActorAway(victim, 0) ;seems to fail on some actors?
+        if PlayerAttacker
+            Attacker.PushActorAway(victim, 0) ;seems to fail on some actors?
+        else 
+            debug.SendAnimationEvent(victim, "IdleForceDefaultState")
+        endif 
         Victim.PushActorAway(Attacker, 3)
+
         FXMeleePunchLargeS.Play(Attacker)
-        if (PlayerAttacker)
+        if (PlayerAttacker) ; player failed to get an npc
             Game.triggerscreenblood(20)
             victim.StartCombat(attacker)
 			victim.DrawWeapon()
-        else
+        else ; player escaped alive
+            playerref.RestoreActorValue("health", playerref.GetActorValueMax("health") / 2.0)
             PlayerRef.SetDontMove(false)
             attacker.StartCombat(attacker)
 			attacker.DrawWeapon()
+            ToggleCombat()
         endif
     endif
 
@@ -297,7 +335,7 @@ Function cycleDone()
             actor damaged
             int damage
 
-            if chanceRoll(66) ;this fucking shit makes no sense
+            if chanceRoll(66) ;Damage either the atacking actor or victim
                 damaged = attackingactor
                 damage = 1
 
@@ -549,7 +587,7 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
     startscene(aggressor, playerref)
 
-    actor[] followers = GetCombatAllies(playerref)
+    actor[] followers = papyrusutil.removeactor(GetCombatAllies(playerref), PlayerRef)
    
 
     if followers.Length > 0

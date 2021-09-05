@@ -22,13 +22,14 @@
         <Import>https://github.com/MrOctopus/nl_online/tree/main/jcontainersse/source</Import>
         <Import>https://github.com/MrOctopus/nl_online/tree/main/skyui/source</Import>
         <Import>https://github.com/MrOctopus/nl_online/tree/main/skse64/source</Import>
-        <Import>https://github.com/MrOctopus/nl_online/tree/main/sse/source</Import>
+        <Import>https://github.com/Osmosis-Wrench/nl_online/tree/main/sse/source</Import>
         <Import>https://github.com/powerof3/PapyrusExtenderSSE/tree/master/src/Papyrus</Import>
     </Imports>
     <Scripts>
         <Script>@MyProject/Scripts/Source/ODefeatEffect.psc</Script>
         <Script>@MyProject/Scripts/Source/ODefeatMain.psc</Script>
         <Script>@MyProject/Scripts/Source/ODefeatMCM.psc</Script>
+        <Script>@MyProject/Scripts/Source/ODefeatPlayer.psc</Script>
     </Scripts>
     <ZipFiles Output="@Dist">
         <ZipFile Name="@ModName - @Ver" RootDir="@MyProject" Compression="deflate">

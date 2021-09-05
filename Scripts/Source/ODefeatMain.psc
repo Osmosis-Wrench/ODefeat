@@ -40,7 +40,7 @@ bool bResetPosAfterEnd
 
 int stripStage
 Float attackStatus
-bool attackComplete
+bool GameComplete
 bool attackRunning
 Osexbar defeatBar
 
@@ -98,7 +98,7 @@ Function startup()
 
     ; Attack status information.
     attackStatus = 0 
-    attackComplete = False ; Attack has finshed completely.
+    GameComplete = true ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
 
     EnablePlayerVictim = true
@@ -144,7 +144,7 @@ Event onKeyDown(int keyCode)
         return
     endif
 
-    if attackRunning
+    if !GameComplete
         
 
         if keyCode == minigame0KeyCode && nextInputNeeded == 0
@@ -207,8 +207,6 @@ Function attemptAttack(Actor attacker, actor victim)
     attacker.SheatheWeapon()
     victim.SheatheWeapon()
     float difficulty
-    warmupTime = 20
-    stripStage ;?
 
     ; fire rape alert if ocrime installed
     if OCrimeIntegration
@@ -219,7 +217,7 @@ Function attemptAttack(Actor attacker, actor victim)
     endif 
 
 
-    ;Setup Bar percents, also need to investigate bars.
+    ;Setup Bar percents
     if (PlayerAttacker)
         difficulty = getActorAttackDifficulty(victim)
         defeatBar.setPercent(0.05)
@@ -230,67 +228,14 @@ Function attemptAttack(Actor attacker, actor victim)
         AttackStatus = 80.0
         PlayerRef.SetDontMove(True)
         
-        ;EnableCombat(false)
         OSANative.SendEvent(self, "FastDisableCombat")
     EndIf
 
-    attackComplete = False
-    GameCompletionsSinceLastCheck = 0
-    bool victory
-    nextInputNeeded = 0
-    int difficultyCounter = 0
-    int attackPower = 10
 
-    defeatbar.SetBarVisible( true)
-
-    RunStruggleAnim(attacker, victim) 
-
-    droppedItems = PapyrusUtil.ObjRefArray(6, none) ; reset clothes cache
     
-    while (!attackComplete)
-        if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
-            if (GameCompletionsSinceLastCheck > 0)
-                warmupTime = 0
-            else
-                warmupTime -= 1
-            endif
-        else ; do the main minigame loop.           
+    bool victory = minigame(difficulty)
 
-            
-            if (PlayerAttacker)
-                attackStatus += (GameCompletionsSinceLastCheck * attackPower) - difficulty
-            else
-                attackStatus -= (GameCompletionsSinceLastCheck * attackPower) - difficulty
-            endif
-
-            defeatBar.SetPercent(attackStatus / 100.0)
-            GameCompletionsSinceLastCheck = 0
-
-            if(!cheatMode)
-                difficultyCounter += 1
-                if difficultyCounter >= 50 ;boost difficulty if slow (5 seconds)
-                    difficulty += 1
-                    difficultyCounter = 0
-                endif
-            endif
-            
-            if (attackStatus > GetNextAttackStatusStripThreshold()) && (victim != PlayerRef)
-                stripItem(Victim, GetNextStripItem(Victim))
-                GoToNextState()
-            endif
-
-            if (attackStatus <= 0) ; If attackStatus bar is empty, exit loop.
-                attackComplete = True
-                victory = false
-            elseif (attackStatus >= 100) ; If attackStatus bar is full, exit loop.
-                attackComplete = True
-                victory = True
-            endIf
-        endIf
-        Utility.Wait(0.1)
-    endWhile
-
-    defeatbar.SetBarVisible(false)
+    
     
     ; On Struggle End
     if (Victory) ; the attacker won
@@ -333,6 +278,75 @@ Function attemptAttack(Actor attacker, actor victim)
 
     attackRunning = false
 EndFunction
+
+bool Function Minigame(float difficulty, bool strip = true, bool struggle = true)
+    if struggle
+        RunStruggleAnim(AttackingActor, VictimActor) 
+    endif 
+
+
+    GameCompletionsSinceLastCheck = 0
+    nextInputNeeded = 0
+    int attackPower = 10
+    int difficultyCounter
+    GameComplete = False
+    droppedItems = PapyrusUtil.ObjRefArray(6, none) ; reset clothes cache
+    warmupTime = 20
+
+
+    bool victory
+
+    defeatbar.SetBarVisible( true)
+
+    while (!GameComplete)
+        if (warmupTime > 0) ; A little bit of time at the begining for getting ready.
+            if (GameCompletionsSinceLastCheck > 0)
+                warmupTime = 0
+            else
+                warmupTime -= 1
+            endif
+        else ; do the main minigame loop.           
+
+            
+            if (PlayerAttacker)
+                attackStatus += (GameCompletionsSinceLastCheck * attackPower) - difficulty
+            else
+                attackStatus -= (GameCompletionsSinceLastCheck * attackPower) - difficulty
+            endif
+
+            defeatBar.SetPercent(attackStatus / 100.0)
+            GameCompletionsSinceLastCheck = 0
+
+            if(!cheatMode)
+                difficultyCounter += 1
+                if difficultyCounter >= 50 ;boost difficulty if slow (5 seconds)
+                    difficulty += 1
+                    difficultyCounter = 0
+                endif
+            endif
+            
+            if strip
+                if (attackStatus > GetNextAttackStatusStripThreshold()) && (VictimActor != PlayerRef)
+                    stripItem(VictimActor, GetNextStripItem(VictimActor))
+                    GoToNextState()
+                endif
+            endif
+
+            if (attackStatus <= 0) ; If attackStatus bar is empty, exit loop.
+                GameComplete = True
+                victory = false
+            elseif (attackStatus >= 100) ; If attackStatus bar is full, exit loop.
+                GameComplete = True
+                victory = True
+            endIf
+        endIf
+        Utility.Wait(0.1)
+    endWhile
+
+    defeatbar.SetBarVisible(false)
+
+    return victory
+endfunction
 
 Function cycleDone() 
     GameCompletionsSinceLastCheck += 1
@@ -703,6 +717,8 @@ Function StartScene(actor Dom, actor Sub)
         ostim.SkipEndingFadein = true
         PlayerRef.SetDontMove(false)
 
+        PlayerRef.DamageActorValue("stamina", 999.0)
+
         bResetPosAfterEnd = ostim.ResetPosAfterSceneEnd
         ostim.ResetPosAfterSceneEnd = false 
         playerref.RestoreActorValue("health", 30 + (math.abs(PlayerRef.GetActorValue("health"))))
@@ -726,11 +742,36 @@ EndFunction
 ; ODefeat keybind functions.
 
 Function attackKeyHandler()
-    actor npc = Game.GetCurrentCrosshairRef() as Actor ; find out if there is a faster way to do this with properties.
+    
     
     if ostim.IsActorActive(playerref)
-        return 
+        if ostim.HasSceneMetadata("odefeat_victim")
+            if PlayerRef.GetActorValuePercentage("stamina") > 0.98
+                defeatBar.setPercent(0.90)
+                AttackStatus = 90.0
+                if !Minigame(getActorAttackDifficulty(ostim.GetAggressiveActor()), false, false)
+                    ostim.AddSceneMetadata("odefeat_escaped")
+                    ostim.EndAnimation(false)
+                    ;PlayerRef.PushActorAway(ostim.GetAggressiveActor(), 5.0)
+                    return
+                else 
+                    PlayerRef.DamageActorValue("stamina", 999.0)
+                    return 
+                endif 
+            else 
+                if !IsUIVisible()
+                    SetUIVisible(true)
+                    Utility.Wait(3)
+                    SetUIVisible(false)
+                endif 
+                return
+            endif 
+        else 
+            return 
+        endif 
     endif 
+
+    actor npc = Game.GetCurrentCrosshairRef() as Actor 
 
     if (!npc.isDead())
         If isActorHelpless(npc)
@@ -974,21 +1015,23 @@ Float Function getActorAttackDifficulty(actor target)
 endFunction
 
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)
-   
+    if ostim.HasSceneMetadata("odefeat_escaped")  
+        EnableCombat(true, true) 
+        game.FadeOutGame(false, true, 0.0, 0.001)
+   endif 
 EndEvent 
 
 Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
-    if ostim.HasSceneMetadata("odefeat_victim")
-        Utility.Wait(2)
+    if ostim.HasSceneMetadata("odefeat_victim") 
+        if !ostim.HasSceneMetadata("odefeat_escaped") 
+            Utility.Wait(2)
 
-        MoveToSafeSpot()
+            MoveToSafeSpot()
 
-        EnableCombat(true) 
-
-        OSANative.SendEvent(self, "UndoMassCalm")
+            EnableCombat(true) 
+        endif 
 
         ostim.SkipEndingFadein = false
-
         ostim.ResetPosAfterSceneEnd = bResetPosAfterEnd
     endif 
 EndEvent

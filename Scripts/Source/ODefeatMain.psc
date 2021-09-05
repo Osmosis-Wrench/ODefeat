@@ -18,12 +18,12 @@ MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
 
-bool Property EnablePlayerVictim ;todo mcm
+bool Property EnablePlayerVictim
     bool Function Get()
         return (GetNthAlias(0) as ODefeatPlayer).EnableVictim
     EndFunction
 
-    Function Set(bool Variable) ; todo mcm
+    Function Set(bool Variable)
         if variable 
             PlayerRef.StartDeferredKill()
             (GetNthAlias(0) as ODefeatPlayer).EnableVictim = true
@@ -35,8 +35,9 @@ bool Property EnablePlayerVictim ;todo mcm
     EndFunction
 EndProperty
 
-bool bResetPosAfterEnd
+bool Property EnablePlayerAggressor auto
 
+bool bResetPosAfterEnd
 
 int stripStage
 Float attackStatus
@@ -58,14 +59,12 @@ int warmupTime
 
 bool Property cheatMode = false auto ;TODO - disable for release
 
-int startAttackKeyCode = 34 ;g ; todo mcm
-int minigame0KeyCode = 42 ;leftshift ; todo mcm
-int minigame1KeyCode = 54 ;rightshift ; todo mcm
-int endAttackKeyCode = 57 ;spacebar ; todo mcm
+int property startAttackKeyCode auto
+int property minigame0KeyCode auto
+int property minigame1KeyCode auto
+int property endAttackKeyCode auto
 
-
-int property DefeatedAssaultChance auto ; todo mcm
-
+int property DefeatedAssaultChance auto
 int property DefeatKillChance auto
 
 ;todo fix death animation glitch
@@ -95,16 +94,10 @@ Function KillPlayer() Global
 endfunction 
 
 Function startup()
-
-
     ; Attack status information.
     attackStatus = 0 
     GameComplete = true ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
-
-    EnablePlayerVictim = true
-
-    DefeatedAssaultChance = 100 ; todo mcm
 
     defeatBar = (Self as Quest) as Osexbar
     
@@ -117,9 +110,6 @@ Function startup()
     InitBar(defeatBar)
     OUtils.RegisterForOUpdate(self)
     ostim.RegisterForGameLoadEvent(self)
-
-
-    DefeatKillChance = 0
 
     OnGameLoad()
 
@@ -134,8 +124,7 @@ Event OnGameLoad()
     RegisterForModEvent("ostim_end", "OstimEnd")
     RegisterForModEvent("ostim_totalend", "OstimTotalEnd")
     attackRunning = false
-
-     ; Register for keypress events. I'm not sure what all of these do yet.
+    
     RegisterForKey(startAttackKeyCode) ;G - attacks
     RegisterForKey(minigame0KeyCode) ;leftshift - Minigame key 1
     RegisterForKey(minigame1KeyCode) ;rightshift - Minigame key 2
@@ -143,26 +132,21 @@ Event OnGameLoad()
 EndEvent
 
 Event onKeyDown(int keyCode)
-    
     if MenuOpen()
         return
     endif
 
-    if !GameComplete
-        
-
+    if !GameComplete 
         if keyCode == minigame0KeyCode && nextInputNeeded == 0
             nextInputNeeded = 1
-
         elseif keyCode == minigame1KeyCode && nextInputNeeded == 1
             nextInputNeeded = 0
             cycleDone()
         elseif keyCode == endAttackKeyCode
             GameCompletionsSinceLastCheck = -200
         endif
-    Elseif (keyCode == startAttackKeyCode) ; G
-        ;Try to perform attack, or strip dead npc?
-        attackKeyHandler()
+    Elseif (EnablePlayerAggressor && keyCode == startAttackKeyCode)
+            attackKeyHandler()
     EndIf
 EndEvent
 
@@ -746,8 +730,6 @@ EndFunction
 ; ODefeat keybind functions.
 
 Function attackKeyHandler()
-    
-    
     if ostim.IsActorActive(playerref)
         if ostim.HasSceneMetadata("odefeat_victim")
             if PlayerRef.GetActorValuePercentage("stamina") > 0.98
@@ -797,20 +779,15 @@ EndFunction
 ; ╚═╝     ╚═╝╚═╝╚══════╝ ╚═════╝
 ; ODefeat misc functions.
 
-
-
 Function EnableCombat(bool enable, bool forceReengage = false)
     osanative.toggleCombat(enable)
     if enable 
-        
         if forceReengage
             ResumeCombatAll()
             PlayerRef.CreateDetectionEvent(PlayerRef, 100)
         endif 
-        
     else 
        StopCombatAll()
-        
     endif 
 EndFunction
 
@@ -833,19 +810,16 @@ Function StopCombatAll()
     lastKnownAllies = papyrusutil.removeactor(GetCombatAllies(PlayerRef), playerref)
 
     actor[] everyone = osanative.GetActors()
-   int i = 0
-   int max = everyone.Length
-   while i < max 
-    everyone[i].StopCombat()
-   ; everyone[i].StopCombatAlarm()
-
-    i += 1
-   endwhile
+    int i = 0
+    int max = everyone.Length
+    while i < max 
+        everyone[i].StopCombat()
+        i += 1
+    endwhile
 endfunction
 
 actor[] lastKnownEnemies 
 actor[] lastKnownAllies
-
 
 Bool Function doTrauma(Actor target, bool enter = true)
     if (target.IsDead() || Target == PlayerRef)
@@ -863,11 +837,8 @@ Bool Function doTrauma(Actor target, bool enter = true)
         Utility.Wait(1)
 
         if !Target.HasMagicEffect(ODefeatMagicEffect)       
-                ODefeatSpell.cast(Target)
+            ODefeatSpell.cast(Target)
         endif
-
-        
-
         int Tries = 3
         float X
         float newX
@@ -1038,7 +1009,6 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
                 EnableCombat(true)
             endif  
         endif 
-
         ostim.SkipEndingFadein = false
         ostim.ResetPosAfterSceneEnd = bResetPosAfterEnd
     endif 

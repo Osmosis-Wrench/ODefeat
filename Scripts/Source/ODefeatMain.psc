@@ -63,7 +63,6 @@ int minigame0KeyCode = 42 ;leftshift ; todo mcm
 int minigame1KeyCode = 54 ;rightshift ; todo mcm
 int endAttackKeyCode = 57 ;spacebar ; todo mcm
 
-actor[] savedFollowers
 
 int property DefeatedAssaultChance auto ; todo mcm
 
@@ -124,6 +123,10 @@ Function startup()
 EndFunction
 
 Event OnGameLoad()
+    if !OSANative.DetectionActive()
+        Console("Enabling combat")
+        EnableCombat(true)
+    endif 
     RegisterForModEvent("ostim_end", "OstimEnd")
     RegisterForModEvent("ostim_totalend", "OstimTotalEnd")
     attackRunning = false
@@ -226,7 +229,9 @@ Function attemptAttack(Actor attacker, actor victim)
         defeatBar.setPercent(0.80)
         AttackStatus = 80.0
         PlayerRef.SetDontMove(True)
-        EnableCombat(false)
+        
+        ;EnableCombat(false)
+        OSANative.SendEvent(self, "FastDisableCombat")
     EndIf
 
     attackComplete = False
@@ -320,8 +325,7 @@ Function attemptAttack(Actor attacker, actor victim)
             attacker.StartCombat(attacker)
 			attacker.DrawWeapon()
 
-            PlayerRef.CreateDetectionEvent(PlayerRef, 90)
-            EnableCombat(true)
+            EnableCombat(true, forceReengage = true)
         endif
     endif
 
@@ -564,13 +568,13 @@ Function MoveToSafeSpot()
     MoveToNearestNavmeshLocation(PlayerRef)
     Game.FadeOutGame(False, True, 25.0, 25.0)
 
-    if savedFollowers.Length > 0
+    if lastKnownAllies.Length > 0
         i = 0 
-        while i < savedFollowers.Length
-            savedFollowers[i].MoveTo(PlayerRef, OSANative.RandomFloat(-512, 512), OSANative.RandomFloat(-512, 512), abMatchRotation = false)
-            MoveToNearestNavmeshLocation(savedFollowers[i])
+        while i < lastKnownAllies.Length
+            lastKnownAllies[i].MoveTo(PlayerRef, OSANative.RandomFloat(-512, 512), OSANative.RandomFloat(-512, 512), abMatchRotation = false)
+            MoveToNearestNavmeshLocation(lastKnownAllies[i])
 
-            savedFollowers[i].PushActorAway(savedFollowers[i], 0.1)
+            lastKnownAllies[i].PushActorAway(lastKnownAllies[i], 0.1)
             i += 1
         EndWhile
     endif 
@@ -609,7 +613,7 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
     startscene(aggressor, playerref)
 
-    actor[] followers = papyrusutil.removeactor(GetCombatAllies(playerref), PlayerRef)
+    actor[] followers = lastKnownAllies
    
 
     if followers.Length > 0
@@ -698,8 +702,7 @@ Function StartScene(actor Dom, actor Sub)
 
         ostim.SkipEndingFadein = true
         PlayerRef.SetDontMove(false)
-        savedFollowers = GetCombatAllies(PlayerRef)
-        savedFollowers = PapyrusUtil.RemoveActor(savedFollowers, PlayerRef)
+
         bResetPosAfterEnd = ostim.ResetPosAfterSceneEnd
         ostim.ResetPosAfterSceneEnd = false 
         playerref.RestoreActorValue("health", 30 + (math.abs(PlayerRef.GetActorValue("health"))))
@@ -749,36 +752,54 @@ EndFunction
 ; ╚═╝     ╚═╝╚═╝╚══════╝ ╚═════╝
 ; ODefeat misc functions.
 
-Function toggleCombat() 
-    ; Huge hack.
-    ConsoleUtil.ExecuteCommand("tcai")
 
-EndFunction
 
-Function EnableCombat(bool enable)
-    Console("toggling")
+Function EnableCombat(bool enable, bool forceReengage = false)
+    osanative.toggleCombat(enable)
     if enable 
-        SetInvisibleToEnemies(playerref, false)
+        
+        if forceReengage
+            ResumeCombatAll()
+            PlayerRef.CreateDetectionEvent(PlayerRef, 100)
+        endif 
         
     else 
-        SetInvisibleToEnemies(playerref, true)
+       StopCombatAll()
         
     endif 
 EndFunction
 
-Function SetInvisibleToEnemies(actor act, bool invis)
-    if invis
-        PreventActorDetecting(act)
-        PreventActorDetection(act)
-        act.SetGhost(true)
-    else 
-        ResetActorDetection(act)
-        resetactordetecting(act)
-        act.SetGhost(false)
-    endif 
-EndFunction
+Event FastDisableCombat()
+    EnableCombat(false)
+EndEvent
 
-actor[] lastKnownEnemies ; todo remove if possible
+Function ResumeCombatAll() 
+    int i = 0 
+    int max = lastKnownEnemies.Length
+    while i < max 
+        lastKnownEnemies[i].StartCombat(PlayerRef)
+
+        i += 1
+    endwhile
+endfunction 
+
+Function StopCombatAll()
+    lastKnownEnemies = GetCombatTargets(PlayerRef)
+    lastKnownAllies = papyrusutil.removeactor(GetCombatAllies(PlayerRef), playerref)
+
+    actor[] everyone = osanative.GetActors()
+   int i = 0
+   int max = everyone.Length
+   while i < max 
+    everyone[i].StopCombat()
+   ; everyone[i].StopCombatAlarm()
+
+    i += 1
+   endwhile
+endfunction
+
+actor[] lastKnownEnemies 
+actor[] lastKnownAllies
 
 
 Bool Function doTrauma(Actor target, bool enter = true)
@@ -962,7 +983,7 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
 
         MoveToSafeSpot()
 
-        EnableCombat(true) ; todo, better
+        EnableCombat(true) 
 
         OSANative.SendEvent(self, "UndoMassCalm")
 

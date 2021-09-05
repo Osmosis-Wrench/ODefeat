@@ -56,7 +56,7 @@ bool OCrimeIntegration
 
 int warmupTime
 
-bool Property cheatMode = true auto ;TODO - disable for release
+bool Property cheatMode = false auto ;TODO - disable for release
 
 int startAttackKeyCode = 34 ;g ; todo mcm
 int minigame0KeyCode = 42 ;leftshift ; todo mcm
@@ -66,8 +66,9 @@ int endAttackKeyCode = 57 ;spacebar ; todo mcm
 
 int property DefeatedAssaultChance auto ; todo mcm
 
-; todo fix freecam on player victim
+int property DefeatKillChance auto
 
+;todo fix death animation glitch
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -116,6 +117,9 @@ Function startup()
     InitBar(defeatBar)
     OUtils.RegisterForOUpdate(self)
     ostim.RegisterForGameLoadEvent(self)
+
+
+    DefeatKillChance = 0
 
     OnGameLoad()
 
@@ -1026,9 +1030,13 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
         if !ostim.HasSceneMetadata("odefeat_escaped") 
             Utility.Wait(2)
 
-            MoveToSafeSpot()
-
-            EnableCombat(true) 
+            if ChanceRoll(DefeatKillChance)
+                EnableCombat(true)
+                KillPlayer()
+            else 
+                MoveToSafeSpot()
+                EnableCombat(true)
+            endif  
         endif 
 
         ostim.SkipEndingFadein = false

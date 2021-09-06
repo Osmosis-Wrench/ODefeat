@@ -28,7 +28,7 @@ bool Property EnablePlayerVictim
             PlayerRef.StartDeferredKill()
             (GetNthAlias(0) as ODefeatPlayer).EnableVictim = true
         else 
-            PlayerRef.SetActorValue("health", 25.0)
+            PlayerRef.RestoreActorValue("health", 25.0)
             PlayerRef.EndDeferredKill()
             (GetNthAlias(0) as ODefeatPlayer).EnableVictim = false
         endif 
@@ -111,6 +111,24 @@ Function startup()
     OUtils.RegisterForOUpdate(self)
     ostim.RegisterForGameLoadEvent(self)
 
+    if ostim.GetAPIVersion() < 23 
+        debug.MessageBox("Your OStim version is out of date. ODefeat requires a newer version")
+        return 
+
+    endif 
+
+    if (CanActorBeDetected(PlayerRef) == 0 )
+        debug.MessageBox("po3's papyrus extender is out of date or not installed. please update")
+        return
+    endif 
+
+    if !MiscUtil.FileExists("data/scripts/nl_mcm.pex")
+        Debug.MessageBox("NL_MCM is not installed. Please install it to use ODefeat")
+        return
+    endif 
+
+    SetDefaultSettings()
+
     OnGameLoad()
 
     Debug.notification("ODefeat installed")
@@ -130,6 +148,19 @@ Event OnGameLoad()
     RegisterForKey(minigame1KeyCode) ;rightshift - Minigame key 2
     RegisterForKey(endAttackKeyCode) ;Space - exit minigame fast
 EndEvent
+
+Function SetDefaultSettings()
+    EnablePlayerVictim = true
+    EnablePlayerAggressor = true
+
+    startAttackKeyCode = 34 ;g
+    minigame0KeyCode = 42 ;leftshift
+    minigame1KeyCode = 54 ;rightshift
+    endAttackKeyCode = 57 ;spacebar
+
+    DefeatedAssaultChance = 100
+    DefeatKillChance = 0
+endfunction 
 
 Event onKeyDown(int keyCode)
     if MenuOpen()

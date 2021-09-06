@@ -17,18 +17,7 @@ Event OnPageInit()
 endEvent
 
 Event OnUpdate()
-    main.EnablePlayerVictim = true
-    main.EnablePlayerAggressor = true
-
-    main.startAttackKeyCode = 34 ;g
-    main.minigame0KeyCode = 42 ;leftshift
-    main.minigame1KeyCode = 54 ;rightshift
-    main.endAttackKeyCode = 57 ;spacebar
-
-    main.DefeatedAssaultChance = 100
-    main.DefeatKillChance = 0
-
-    main.cheatmode = false
+    main.setdefaultsettings()
 EndEvent
 
 event OnPageDraw()
@@ -93,7 +82,7 @@ state startAttackKeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The key to start an assault mingame.")
+		SetInfoText("The key to start a struggle mingame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -109,7 +98,7 @@ state minigame0KeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The left key for the assault minigame.")
+		SetInfoText("The left key for the struggle minigame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -125,7 +114,7 @@ state minigame1KeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The right key for the assault minigame.")
+		SetInfoText("The right key for the struggle minigame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -141,7 +130,7 @@ state endAttackKeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The key to end an assault minigame.")
+		SetInfoText("The key to end a struggle minigame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -156,7 +145,7 @@ state DefeatedAssaultChance_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The chance you will be assaulted after a defeat.")
+		SetInfoText("The chance you will be assaulted after dying with valid enemies nearby.")
 	endevent
 	
 	event OnSliderOpenST(string state_id)
@@ -175,7 +164,7 @@ state DefeatKillChance_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The chance you will be killed after a defeat.")
+		SetInfoText("The chance you will be killed after being assaulted.")
 	endevent
 	
 	event OnSliderOpenST(string state_id)

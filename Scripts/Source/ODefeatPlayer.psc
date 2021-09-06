@@ -62,13 +62,13 @@ Function HandlePlayerDeath()
 
 
 	if ChanceRoll(odefeat.DefeatedAssaultChance)
-		; try to assault player
-
-		; TODO gender settings?
-
-		;KnockdownAnimation()
-
-		;bool femalePlayer = AppearsFemale(playerref)
+		
+		if odefeat.MaleNPCsWontAssault
+			enemies = OSANative.RemoveActorsWithGender(enemies, 0)
+		endif 
+		if odefeat.FemaleNPCsWontAssault
+			enemies = OSANative.RemoveActorsWithGender(enemies, 1)
+		endif 
 
 		int i = 0
 		int max = enemies.Length

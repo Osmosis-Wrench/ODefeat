@@ -37,6 +37,10 @@ EndProperty
 
 bool Property EnablePlayerAggressor auto
 
+
+bool property MaleNPCsWontAssault auto ; todo mcm
+bool property FemaleNPCsWontAssault auto ; todo mcm
+
 bool bResetPosAfterEnd
 
 int stripStage
@@ -152,6 +156,9 @@ EndEvent
 Function SetDefaultSettings()
     EnablePlayerVictim = true
     EnablePlayerAggressor = true
+
+    MaleNPCsWontAssault = false 
+    FemaleNPCsWontAssault = false 
 
     startAttackKeyCode = 34 ;g
     minigame0KeyCode = 42 ;leftshift

@@ -73,6 +73,7 @@ int property endAttackKeyCode auto
 
 int property DefeatedAssaultChance auto
 int property DefeatKillChance auto
+int Property DefeatCustomEventChance Auto ;todo mcm
 
 ;todo fix death animation glitch
 
@@ -100,6 +101,14 @@ Function KillPlayer() Global
     player.KillEssential()
 endfunction 
 
+form[] CustomScenes
+int[] sceneWeights
+Function EnterCustomEndScene(form scriptForm, int defaultWeight = 10)
+    int nextFree = CustomScenes.Find(none)
+    CustomScenes[nextFree] = scriptForm
+    sceneWeights[nextFree] = defaultWeight
+EndFunction
+
 Function startup()
     ; Attack status information.
     attackStatus = 0 
@@ -107,6 +116,9 @@ Function startup()
     attackRunning = False ; Attack is in progress.
 
     defeatBar = (Self as Quest) as Osexbar
+
+    CustomScenes = PapyrusUtil.FormArray(100, none)
+    sceneWeights = PapyrusUtil.intArray(100, 0)
     
     OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 
@@ -165,6 +177,7 @@ Function SetDefaultSettings()
 
     RobPlayerChance = 0
     MinValueToRob = 350
+    DefeatCustomEventChance = 0
 
     startAttackKeyCode = 34 ;g
     minigame0KeyCode = 42 ;leftshift
@@ -1073,6 +1086,9 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
             if ChanceRoll(DefeatKillChance)
                 EnableCombat(true)
                 KillPlayer()
+            elseif ChanceRoll(DefeatCustomEventChance)
+                DoCustomEvent()
+                EnableCombat(true)
             else 
                 if ChanceRoll(RobPlayerchance)
                     RobPlayer(ostim.GetAggressiveActor())
@@ -1086,6 +1102,25 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
     endif 
 EndEvent
 
+function DoCustomEvent()
+    form[] events = CustomScenes
+    events = PapyrusUtil.RemoveForm(events, none)
+
+    form[] weightedArray = PapyrusUtil.FormArray(0)
+
+    int i = 0
+    int max = events.Length
+    while i < max 
+        weightedArray = PapyrusUtil.MergeFormArray(weightedArray, PapyrusUtil.FormArray(sceneWeights[i], events[i]))
+
+        i += 1
+    endwhile 
+
+    form chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
+
+    OSANative.SendEvent(chosenEvent, "odefeat_DoScene")
+
+EndFunction
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)

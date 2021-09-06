@@ -54,7 +54,7 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 EndEvent
 
 Function HandlePlayerDeath()
-	actor[] enemies = PO3_SKSEFunctions.GetCombatTargets(playerref)
+	actor[] enemies = osanative.sortactorsbydistance(playerref, PO3_SKSEFunctions.GetCombatTargets(playerref))
 	if enemies.Length < 1
 		ODefeatMain.KillPlayer()
 		Console("No enemies...")
@@ -64,7 +64,6 @@ Function HandlePlayerDeath()
 	if ChanceRoll(odefeat.DefeatedAssaultChance)
 		; try to assault player
 
-		; TODO sort by distance
 		; TODO gender settings?
 
 		;KnockdownAnimation()

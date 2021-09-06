@@ -1120,7 +1120,7 @@ function DoCustomEvent()
 
     form chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
 
-    OSANative.SendEvent(chosenEvent, "odefeat_DoScene")
+    OSANative.SendEvent(chosenEvent, "ODefeatCustomScene")
 
 EndFunction
 

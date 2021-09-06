@@ -52,8 +52,8 @@ bool GameComplete
 bool attackRunning
 Osexbar defeatBar
 
-Actor AttackingActor
-Actor VictimActor
+Actor property AttackingActor auto
+Actor property VictimActor auto
 
 int nextInputNeeded 
 int GameCompletionsSinceLastCheck

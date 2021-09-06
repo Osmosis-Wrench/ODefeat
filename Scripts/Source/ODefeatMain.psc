@@ -119,6 +119,8 @@ Function startup()
 
     CustomScenes = PapyrusUtil.FormArray(100, none)
     sceneWeights = PapyrusUtil.intArray(100, 0)
+
+    SendModEvent("odefeat_customScenes_PleaseSend")
     
     OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 

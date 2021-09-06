@@ -26,6 +26,8 @@ event OnPageDraw()
     AddHeaderOption(FONT_CUSTOM("Core Options", pink))
     AddToggleOptionST("EnablePlayerVictim_State", "Enable Player as Victim", main.EnablePlayerVictim)
     AddToggleOptionST("EnablePlayerAggressor_State", "Enable Player as Aggressor", main.EnablePlayerAggressor)
+    AddToggleOptionST("MaleNPCsWontAssault_State", "Male NPC's as Aggressors", !main.MaleNPCsWontAssault)
+    AddToggleOptionST("FemaleNPCsWontAssault_State", "Female NPC's as Aggressors", !main.femaleNPCsWontAssault)
 
     AddHeaderOption(FONT_CUSTOM("Keybinds", blue))
     AddKeyMapOptionST("startAttackKeyCode_State", "Start Assault Key", main.startAttackKeyCode)
@@ -36,6 +38,8 @@ event OnPageDraw()
     AddHeaderOption(FONT_CUSTOM("Probabilities", pink))
     AddSliderOptionST("DefeatedAssaultChance_State", "Assault Chance", main.DefeatedAssaultChance)
     AddSliderOptionST("DefeatKillChance_State", "Death Chance", main.DefeatKillChance)
+    AddSliderOptionST("RobPlayerChance_State", "Rob Player Chance", main.RobPlayerChance)
+    AddSliderOptionST("MinValueToRob_State", "Minimum value to steal", main.MinValueToRob)
     
     if (release == false)
         AddHeaderOption(FONT_CUSTOM("Dev Options", blue))
@@ -72,6 +76,38 @@ state EnablePlayerAggressor_State
     event OnDefaultST(string state_id)
         Main.EnablePlayerAggressor = True
         SetToggleOptionValueST(Main.EnablePlayerAggressor)
+    endevent
+endState
+
+state MaleNPCsWontAssault_State
+    event OnSelectST(string state_id)
+        Main.MaleNPCsWontAssault = !Main.MaleNPCsWontAssault
+        SetToggleOptionValueST(!Main.MaleNPCsWontAssault)
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("If enabled, the player can be assualted by Female NPC's.")
+    endevent
+
+    event OnDefaultST(string state_id)
+        Main.EnablePlayerAggressor = True
+        SetToggleOptionValueST(Main.MaleNPCsWontAssault)
+    endevent
+endState
+
+state FemaleNPCsWontAssault_State
+    event OnSelectST(string state_id)
+        Main.FemaleNPCsWontAssault = !Main.FemaleNPCsWontAssault
+        SetToggleOptionValueST(!Main.FemaleNPCsWontAssault)
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("If enabled, the player can be assualted by Female NPC's.")
+    endevent
+
+    event OnDefaultST(string state_id)
+        Main.EnablePlayerAggressor = True
+        SetToggleOptionValueST(Main.FemaleNPCsWontAssault)
     endevent
 endState
 
@@ -173,6 +209,44 @@ state DefeatKillChance_State
 	
 	event OnSliderAcceptST(string state_id, float f)
 		main.DefeatKillChance = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
+
+state RobPlayerChance_State
+	event OnDefaultST(string state_id)
+		main.RobPlayerChance = 0
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("The chance you will be robbed after being assaulted.")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.RobPlayerChance, 0, 100, 1.0, 0)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.RobPlayerChance = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
+
+state MinValueToRob_State
+	event OnDefaultST(string state_id)
+		main.MinValueToRob = 350
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("Any item under this value can be stolen.")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.MinValueToRob, 0, 2500, 10.0, 350)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.MinValueToRob = f as int
 		SetSliderOptionValueST(f)
 	endevent
 endstate

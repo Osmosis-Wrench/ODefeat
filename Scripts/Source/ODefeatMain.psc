@@ -38,11 +38,11 @@ EndProperty
 bool Property EnablePlayerAggressor auto
 
 
-bool property MaleNPCsWontAssault auto ; todo mcm
-bool property FemaleNPCsWontAssault auto ; todo mcm
+bool property MaleNPCsWontAssault auto
+bool property FemaleNPCsWontAssault auto
 
-int property RobPlayerChance auto ; todo mcm
-int Property MinValueToRob Auto ; todo mcm
+int property RobPlayerChance auto
+int Property MinValueToRob Auto
 
 bool bResetPosAfterEnd
 

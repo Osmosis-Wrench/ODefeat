@@ -41,6 +41,9 @@ bool Property EnablePlayerAggressor auto
 bool property MaleNPCsWontAssault auto ; todo mcm
 bool property FemaleNPCsWontAssault auto ; todo mcm
 
+int property RobPlayerChance auto ; todo mcm
+int Property MinValueToRob Auto ; todo mcm
+
 bool bResetPosAfterEnd
 
 int stripStage
@@ -159,6 +162,9 @@ Function SetDefaultSettings()
 
     MaleNPCsWontAssault = false 
     FemaleNPCsWontAssault = false 
+
+    RobPlayerChance = 0
+    MinValueToRob = 350
 
     startAttackKeyCode = 34 ;g
     minigame0KeyCode = 42 ;leftshift
@@ -636,6 +642,11 @@ Function MoveToSafeSpot()
     SetSkyUIWidgetsVisible(true)
 
     debug.Notification("You were dumped nearby")
+    if wasRobbed
+        wasRobbed = false 
+
+        debug.notification("You were robbed of your valuables")
+    endif 
 EndFunction
 
 location Function CellToLocation(cell c)
@@ -986,6 +997,26 @@ Function stripItem(actor target, form item, bool doImpulse = true)
     stripStage += 1
 endFunction
 
+bool wasRobbed
+Function RobPlayer(actor robber)
+    wasRobbed = true 
+    form[] playerInv = AddAllItemsToArray(playerref,false, false, true)
+    playerInv = osanative.RemoveFormsBelowValue(playerInv, MinValueToRob)
+
+    int i = 0 
+    int max = playerInv.Length
+    while i < max 
+        if ChanceRoll(50)
+            form thing = playerInv[i]
+
+            PlayerRef.RemoveItem(thing, aiCount = PlayerRef.GetItemCount(thing), abSilent = true, akOtherContainer = robber)
+        endif 
+
+
+        i += 1
+    endwhile 
+
+EndFunction
 
 Float Function getActorAttackDifficulty(actor target)
     ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.    
@@ -1043,6 +1074,9 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
                 EnableCombat(true)
                 KillPlayer()
             else 
+                if ChanceRoll(RobPlayerchance)
+                    RobPlayer(ostim.GetAggressiveActor())
+                endif 
                 MoveToSafeSpot()
                 EnableCombat(true)
             endif  

@@ -18,6 +18,15 @@ MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
 
+int property oDefeatEventsJDB
+    int function get()
+        return JDB.solveObj(".ODefeat.events")
+      endfunction
+      function set(int object)
+        JDB.solveObjSetter(".ODefeat.events", object, true)
+      endfunction
+endproperty
+
 bool Property EnablePlayerVictim
     bool Function Get()
         return (GetNthAlias(0) as ODefeatPlayer).EnableVictim
@@ -103,6 +112,7 @@ endfunction
 
 form[] CustomScenes
 int[] sceneWeights
+
 Function EnterCustomEndScene(form scriptForm, int defaultWeight = 10)
     int nextFree = CustomScenes.Find(none)
     CustomScenes[nextFree] = scriptForm
@@ -130,6 +140,12 @@ Function startup()
     OUtils.RegisterForOUpdate(self)
     ostim.RegisterForGameLoadEvent(self)
 
+    ;CustomScenes[1] = Game.GetFormFromFile(0x00000800, "odeftest.esp")
+    ;sceneWeights[1] = 100
+
+    registerforkey(26)
+    registerforkey(27)
+
     if ostim.GetAPIVersion() < 23 
         debug.MessageBox("Your OStim version is out of date. ODefeat requires a newer version")
         return 
@@ -152,6 +168,23 @@ Function startup()
 
     Debug.notification("ODefeat installed")
 EndFunction
+
+Function UpdateEventData()
+    int x = 0
+    string eventKey = JMap.NextKey(oDefeatEventsJDB)
+    while EventKey
+        bool enabled = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Enabled") as bool
+        WriteLog(enabled)
+        if enabled
+            form tempform = JValue.SolveForm(oDefeatEventsJDB, "." + eventKey + ".Form")
+            int tempint = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Weighting")
+            CustomScenes[x] = tempform
+            sceneWeights[x] = tempint
+        endIf
+        x += 1
+        eventKey = JMap.NextKey(oDefeatEventsJDB, eventKey)
+    endwhile
+endFunction
 
 Event OnGameLoad()
     if !OSANative.DetectionActive()
@@ -191,6 +224,12 @@ endfunction
 Event onKeyDown(int keyCode)
     if MenuOpen()
         return
+    endif
+
+    if keyCode == 26
+        ;nada
+    elseif keyCode == 27
+        DoCustomEvent()
     endif
 
     if !GameComplete 
@@ -1117,9 +1156,8 @@ function DoCustomEvent()
     endwhile 
 
     form chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
-
+    writelog(chosenEvent)
     OSANative.SendEvent(chosenEvent, "odefeat_DoScene")
-
 EndFunction
 
 ; This just makes life easier sometimes.
@@ -1130,14 +1168,6 @@ Function WriteLog(String OutputLog, bool error = false)
         Debug.Notification("ODefeat: " + OutputLog)
     endIF
 EndFunction
-
-
-
-
-
-
-
-
 
 ;; Base State
 function GotoNextState()    

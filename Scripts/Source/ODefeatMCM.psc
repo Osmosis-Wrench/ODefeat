@@ -238,7 +238,7 @@ state MinValueToRob_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("Any item under this value can be stolen.")
+		SetInfoText("Any item over this value can be stolen.")
 	endevent
 	
 	event OnSliderOpenST(string state_id)

@@ -6,7 +6,7 @@
     },
     "idk it's junk": {
       "Enabled": 0,
-      "Form": "__formData|meh.esp|0x800",
-      "Weighting": 55
+      "Form": "__formData|meh.esp|0x000800",
+      "Weighting": 0
     }
   }

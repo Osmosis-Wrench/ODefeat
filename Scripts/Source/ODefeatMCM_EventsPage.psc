@@ -44,23 +44,25 @@ endEvent
 function BuildPageContents()
     string eventkey = JMap.NextKey(oDefeatEventsJDB)
     while eventkey
-        bool eventEnabled = Jvalue.SolveInt(oDefeatEventsJDB, "." + eventkey + ".Enabled") as bool
-        AddToggleOptionST("event_toggle_state___" + eventkey, eventkey, eventEnabled)
+        int eventWeighting = Jvalue.SolveInt(oDefeatEventsJDB, "." + eventkey + ".Weighting")
+        AddSliderOptionST("event_slider_state___" + eventkey, eventkey, eventWeighting)
         eventkey = Jmap.nextKey(oDefeatEventsJDB, eventkey)
     endwhile
 endFunction
 
-State event_toggle_state
-    event OnSelectST(string state_id)
-        bool eventEnabled = Jvalue.SolveInt(oDefeatEventsJDB, "." + state_id + ".Enabled") as bool
-        eventEnabled = !eventEnabled
-        JValue.SolveIntSetter(oDefeatEventsJDB, "." + state_id + ".Enabled", eventEnabled as int)
-        SetToggleOptionValueST(eventEnabled, false, "event_toggle_state___" + state_id)
-        changedDatabase = true
+State event_slider_state
+    event OnSliderOpenST(string state_id)
+        int i = Jvalue.SolveInt(oDefeatEventsJDB, "."+state_id+".Weighting")
+        SetSliderDialog(i, 0, 100, 1.0, 50)
+    endevent
+
+    event OnSliderAcceptST(string state_id, float f)
+        JValue.SolveIntSetter(oDefeatEventsJDB, "." + state_id + ".Weighting", f as int)
+        SetSliderOptionValueST(f)
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("Enable or Disable " + state_id)
+        SetInfoText("Set the chance for " + state_id)
     endevent
 EndState
 

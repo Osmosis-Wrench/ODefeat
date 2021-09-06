@@ -119,6 +119,20 @@ Function EnterCustomEndScene(form scriptForm, int defaultWeight = 10)
     sceneWeights[nextFree] = defaultWeight
 EndFunction
 
+Function UpdateEventData()
+    string eventKey = JMap.NextKey(oDefeatEventsJDB)
+    while EventKey
+        int tempint = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Weighting")
+        WriteLog(EventKey)
+        WriteLog(tempint)
+        if (tempint > 0)
+            form tempform = JValue.SolveForm(oDefeatEventsJDB, "." + eventKey + ".Form")
+            EnterCustomEndScene(tempform, tempint)
+        endIf
+        eventKey = JMap.NextKey(oDefeatEventsJDB, eventKey)
+    endwhile
+endFunction
+
 Function startup()
     ; Attack status information.
     attackStatus = 0 
@@ -169,22 +183,6 @@ Function startup()
     Debug.notification("ODefeat installed")
 EndFunction
 
-Function UpdateEventData()
-    int x = 0
-    string eventKey = JMap.NextKey(oDefeatEventsJDB)
-    while EventKey
-        bool enabled = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Enabled") as bool
-        WriteLog(enabled)
-        if enabled
-            form tempform = JValue.SolveForm(oDefeatEventsJDB, "." + eventKey + ".Form")
-            int tempint = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Weighting")
-            CustomScenes[x] = tempform
-            sceneWeights[x] = tempint
-        endIf
-        x += 1
-        eventKey = JMap.NextKey(oDefeatEventsJDB, eventKey)
-    endwhile
-endFunction
 
 Event OnGameLoad()
     if !OSANative.DetectionActive()

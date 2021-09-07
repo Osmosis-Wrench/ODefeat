@@ -23,8 +23,8 @@ EndEvent
 
 Function OnStart()
     BuildDatabase()
-    ODMain.UpdateEventData()
-    changedDatabase = false
+    Utility.Wait(1) ; If this wait isn't here, the database doesn't populate until after entering and exiting the MCM. No fucking clue why lol.
+    UpdateDatabase()
 endFunction
 
 Event OnPageDraw()
@@ -36,10 +36,14 @@ EndEvent
 
 Event OnConfigClose()
     if changedDatabase
-        ODMain.UpdateEventData()
-        changedDatabase = False
+        UpdateDatabase()
     endif
 endEvent
+
+function UpdateDatabase()
+    ODMain.UpdateEventData()
+    changedDatabase = false
+endFunction
 
 function BuildPageContents()
     string eventkey = JMap.NextKey(oDefeatEventsJDB)
@@ -58,6 +62,7 @@ State event_slider_state
 
     event OnSliderAcceptST(string state_id, float f)
         JValue.SolveIntSetter(oDefeatEventsJDB, "." + state_id + ".Weighting", f as int)
+        changedDatabase = true
         SetSliderOptionValueST(f)
     endevent
 
@@ -76,8 +81,10 @@ Function BuildDatabase()
         string eventKey = Jmap.NextKey(eventData)
         while eventKey
             int obj = JValue.SolveObj(eventData, "." + eventKey)
+            form formvalue = JValue.SolveForm(obj, ".Form")
+            writelog("formvalue "+(formvalue == true))
             JValue.WriteToFile(obj, JContainers.UserDirectory() + eventKey+".json")
-            if (!oDefeatEventsJDB)
+            if (!oDefeatEventsJDB && (formvalue == true))
                 int firstObj = jmap.object()
                 Jmap.SetObj(firstObj, eventKey, obj)
                 oDefeatEventsJDB = firstObj

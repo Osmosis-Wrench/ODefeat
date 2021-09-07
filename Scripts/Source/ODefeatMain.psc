@@ -113,18 +113,10 @@ endfunction
 form[] CustomScenes
 int[] sceneWeights
 
-Function EnterCustomEndScene(form scriptForm, int defaultWeight = 10)
-    int nextFree = CustomScenes.Find(none)
-    CustomScenes[nextFree] = scriptForm
-    sceneWeights[nextFree] = defaultWeight
-EndFunction
-
 Function UpdateEventData()
     string eventKey = JMap.NextKey(oDefeatEventsJDB)
     while EventKey
         int tempint = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Weighting")
-        WriteLog(EventKey)
-        WriteLog(tempint)
         if (tempint > 0)
             form tempform = JValue.SolveForm(oDefeatEventsJDB, "." + eventKey + ".Form")
             EnterCustomEndScene(tempform, tempint)
@@ -132,6 +124,12 @@ Function UpdateEventData()
         eventKey = JMap.NextKey(oDefeatEventsJDB, eventKey)
     endwhile
 endFunction
+
+Function EnterCustomEndScene(form scriptForm, int defaultWeight = 10)
+    int nextFree = CustomScenes.Find(none)
+    CustomScenes[nextFree] = scriptForm
+    sceneWeights[nextFree] = defaultWeight
+EndFunction
 
 Function startup()
     ; Attack status information.
@@ -225,7 +223,7 @@ Event onKeyDown(int keyCode)
     endif
 
     if keyCode == 26
-        ;nada
+        writelog(CustomScenes)
     elseif keyCode == 27
         DoCustomEvent()
     endif
@@ -1142,19 +1140,16 @@ EndEvent
 function DoCustomEvent()
     form[] events = CustomScenes
     events = PapyrusUtil.RemoveForm(events, none)
-
     form[] weightedArray = PapyrusUtil.FormArray(0)
 
     int i = 0
     int max = events.Length
-    while i < max 
+    while i <= max 
         weightedArray = PapyrusUtil.MergeFormArray(weightedArray, PapyrusUtil.FormArray(sceneWeights[i], events[i]))
-
         i += 1
-    endwhile 
+    endwhile
 
-    form chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
-    writelog(chosenEvent)
+    form chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)] 
     OSANative.SendEvent(chosenEvent, "odefeat_DoScene")
 EndFunction
 

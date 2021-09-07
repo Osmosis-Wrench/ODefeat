@@ -110,27 +110,6 @@ Function KillPlayer() Global
     player.KillEssential()
 endfunction 
 
-form[] CustomScenes
-int[] sceneWeights
-
-Function UpdateEventData()
-    string eventKey = JMap.NextKey(oDefeatEventsJDB)
-    while EventKey
-        int tempint = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Weighting")
-        if (tempint > 0)
-            form tempform = JValue.SolveForm(oDefeatEventsJDB, "." + eventKey + ".Form")
-            EnterCustomEndScene(tempform, tempint)
-        endIf
-        eventKey = JMap.NextKey(oDefeatEventsJDB, eventKey)
-    endwhile
-endFunction
-
-Function EnterCustomEndScene(form scriptForm, int defaultWeight = 10)
-    int nextFree = CustomScenes.Find(none)
-    CustomScenes[nextFree] = scriptForm
-    sceneWeights[nextFree] = defaultWeight
-EndFunction
-
 Function startup()
     ; Attack status information.
     attackStatus = 0 
@@ -138,9 +117,6 @@ Function startup()
     attackRunning = False ; Attack is in progress.
 
     defeatBar = (Self as Quest) as Osexbar
-
-    CustomScenes = PapyrusUtil.FormArray(100, none)
-    sceneWeights = PapyrusUtil.intArray(100, 0)
     
     OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 
@@ -223,9 +199,9 @@ Event onKeyDown(int keyCode)
     endif
 
     if keyCode == 26
-        writelog(CustomScenes)
+        ;nothing
     elseif keyCode == 27
-        DoCustomEvent()
+        ;DoCustomEvent()
     endif
 
     if !GameComplete 
@@ -256,8 +232,6 @@ Function InitBar(OSexBar setupBar)
 
     setupbar.SetBarVisible(False)
 endFunction
-
-
 
 ;  ███╗   ███╗ █████╗ ██╗███╗   ██╗
 ;  ████╗ ████║██╔══██╗██║████╗  ██║
@@ -296,7 +270,6 @@ Function attemptAttack(Actor attacker, actor victim)
         ModEvent.Send(ocrime_event)
     endif 
 
-
     ;Setup Bar percents
     if (PlayerAttacker)
         difficulty = getActorAttackDifficulty(victim)
@@ -311,12 +284,8 @@ Function attemptAttack(Actor attacker, actor victim)
         OSANative.SendEvent(self, "FastDisableCombat")
     EndIf
 
-
-    
     bool victory = minigame(difficulty)
 
-    
-    
     ; On Struggle End
     if (Victory) ; the attacker won
         
@@ -1138,20 +1107,26 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
 EndEvent
 
 function DoCustomEvent()
-    form[] events = CustomScenes
-    events = PapyrusUtil.RemoveForm(events, none)
-    form[] weightedArray = PapyrusUtil.FormArray(0)
+    string[] weightedArray = PapyrusUtil.StringArray(0)
 
-    int i = 0
-    int max = events.Length
-    while i <= max 
-        weightedArray = PapyrusUtil.MergeFormArray(weightedArray, PapyrusUtil.FormArray(sceneWeights[i], events[i]))
-        i += 1
+    string eventkey = JMap.NextKey(oDefeatEventsJDB)
+    while eventkey
+        int tempint = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Weighting")
+        weightedArray = PapyrusUtil.MergeStringArray(weightedArray, papyrusUtil.StringArray(tempint, eventkey))
+        eventkey = JMap.NextKey(oDefeatEventsJDB, eventkey)
     endwhile
 
-    form chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)] 
-    OSANative.SendEvent(chosenEvent, "odefeat_DoScene")
-EndFunction
+    string chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
+    string modEventName = JValue.SolveStr(oDefeatEventsJDB, "."+chosenEvent+".modEventName")
+    if (modEventName != "")
+        Writelog("Fired modevent: " + modEventName)
+        SendModEvent(modEventName)
+    Else
+        form eventForm = JValue.SolveForm(oDefeatEventsJDB, "."+chosenEvent+".Form")
+        Writelog("Fired event on form: "+eventForm)
+        OSANative.SendEvent(eventForm, "odefeat_DoScene")
+    endif
+endFunction
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)

@@ -1,7 +1,8 @@
 Scriptname ODefeatMCM_EventsPage extends nl_mcm_module
 
 ODefeatMain property ODMain auto
-bool changedDatabase
+
+String Blue = "#6699ff"
 String Pink = "#ff3389"
 
 int property oDefeatEventsJDB
@@ -18,32 +19,16 @@ event OnInit()
 endEvent
 
 Event OnPageInit()
-    OnStart()
-EndEvent
-
-Function OnStart()
     BuildDatabase()
-    Utility.Wait(1) ; If this wait isn't here, the database doesn't populate until after entering and exiting the MCM. No fucking clue why lol.
-    UpdateDatabase()
-endFunction
+EndEvent
 
 Event OnPageDraw()
     SetCursorFillMode(TOP_TO_BOTTOM)
-    AddHeaderOption(FONT_CUSTOM("After Death Events:", pink))
-    JValue.WriteToFile(oDefeatEventsJDB, JContainers.UserDirectory() + "odefJDB.json")
+    AddHeaderOption(FONT_CUSTOM("Event Controls:", Blue))
+    AddTextOptionST("rebuild_database_state", "Rebuild Database", "Click")
+    AddHeaderOption(FONT_CUSTOM("After Death Events:", Pink))
     BuildPageContents()
 EndEvent
-
-Event OnConfigClose()
-    if changedDatabase
-        UpdateDatabase()
-    endif
-endEvent
-
-function UpdateDatabase()
-    ODMain.UpdateEventData()
-    changedDatabase = false
-endFunction
 
 function BuildPageContents()
     string eventkey = JMap.NextKey(oDefeatEventsJDB)
@@ -54,6 +39,17 @@ function BuildPageContents()
     endwhile
 endFunction
 
+state rebuild_database_state
+    event OnSelectST(string state_id)
+        BuildDatabase()
+        ForcePageReset()
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("Rebuilds the event database. /n This will purge invalid events, load new events and reset weighting to default.")
+    endevent
+endState
+
 State event_slider_state
     event OnSliderOpenST(string state_id)
         int i = Jvalue.SolveInt(oDefeatEventsJDB, "."+state_id+".Weighting")
@@ -62,7 +58,6 @@ State event_slider_state
 
     event OnSliderAcceptST(string state_id, float f)
         JValue.SolveIntSetter(oDefeatEventsJDB, "." + state_id + ".Weighting", f as int)
-        changedDatabase = true
         SetSliderOptionValueST(f)
     endevent
 
@@ -73,7 +68,8 @@ EndState
 
 Function BuildDatabase()
     int eventFilelist = JValue.readFromDirectory("Data/ODefeatData/", ".json")
-    JValue.Retain(eventFilelist)
+    JValue.Retain(eventFilelist) 
+    ; the retain and release are probably unnessesary, but just in case somebody wants to load like 100+ events this should still be fine.
     int eventData
     string eventFileKey = Jmap.NextKey(eventFilelist)
     while eventFileKey
@@ -82,13 +78,11 @@ Function BuildDatabase()
         while eventKey
             int obj = JValue.SolveObj(eventData, "." + eventKey)
             form formvalue = JValue.SolveForm(obj, ".Form")
-            writelog("formvalue "+(formvalue == true))
-            JValue.WriteToFile(obj, JContainers.UserDirectory() + eventKey+".json")
             if (!oDefeatEventsJDB && (formvalue == true))
                 int firstObj = jmap.object()
                 Jmap.SetObj(firstObj, eventKey, obj)
                 oDefeatEventsJDB = firstObj
-            else
+            elseif (formvalue == true)
                 JMap.SetObj(oDefeatEventsJDB, eventKey, obj)
             endif
             eventKey = Jmap.NextKey(eventData, eventKey)

@@ -1159,10 +1159,20 @@ function DoCustomEvent()
     if (modEventName != "")
         Writelog("Fired modevent: " + modEventName)
         SendModEvent(modEventName)
+        CustomEvent_Notify(chosenEvent)
     Else
         form eventForm = JValue.SolveForm(oDefeatEventsJDB, "."+chosenEvent+".Form")
         Writelog("Fired event on form: "+eventForm)
         OSANative.SendEvent(eventForm, "ODefeatCustomScene")
+        CustomEvent_Notify(chosenEvent)
+    endif
+endFunction
+
+Function CustomEvent_Notify(string eventName)
+    int odefeat_CustomEvent = ModEvent.Create(odefeat_CustomEvent)
+    if (odefeat_CustomEvent)
+        ModEvent.PushString(odefeat_CustomEvent, eventName)
+        ModEvent.Send(odefeat_CustomEvent)
     endif
 endFunction
 

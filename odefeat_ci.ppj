@@ -10,7 +10,7 @@
         <Variable Name="ModName" Value="ODefeat"/>
         <Variable Name="MyProject" Value="."/>
         <Variable Name="Dist" Value="..\dist"/>
-        <Variable Name="Ver" Value="0.5"/>
+        <Variable Name="Ver" Value="0.6"/>
     </Variables>
     <Imports>
         <Import>@MyProject/Scripts/Source</Import>
@@ -29,6 +29,7 @@
         <Script>@MyProject/Scripts/Source/ODefeatEffect.psc</Script>
         <Script>@MyProject/Scripts/Source/ODefeatMain.psc</Script>
         <Script>@MyProject/Scripts/Source/ODefeatMCM.psc</Script>
+        <Script>@MyProject/Scripts/Source/ODefeatMCM_EventsPage.psc</Script>
         <Script>@MyProject/Scripts/Source/ODefeatPlayer.psc</Script>
     </Scripts>
     <ZipFiles Output="@Dist">
@@ -36,6 +37,7 @@
             <Include>ODefeat.esp</Include>
             <Include>scripts</Include>
             <Include>meshes</Include>
+            <Include>ODefeatData</Include>
         </ZipFile>
     </ZipFiles>
 </PapyrusProject>

@@ -18,6 +18,15 @@ MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
 
+int property oDefeatEventsJDB
+    int function get()
+        return JDB.solveObj(".ODefeat.events")
+      endfunction
+      function set(int object)
+        JDB.solveObjSetter(".ODefeat.events", object, true)
+      endfunction
+endproperty
+
 bool Property EnablePlayerVictim
     bool Function Get()
         return (GetNthAlias(0) as ODefeatPlayer).EnableVictim
@@ -101,14 +110,6 @@ Function KillPlayer() Global
     player.KillEssential()
 endfunction 
 
-form[] CustomScenes
-int[] sceneWeights
-Function EnterCustomEndScene(form scriptForm, int defaultWeight = 10)
-    int nextFree = CustomScenes.Find(none)
-    CustomScenes[nextFree] = scriptForm
-    sceneWeights[nextFree] = defaultWeight
-EndFunction
-
 Function startup()
     ; Attack status information.
     attackStatus = 0 
@@ -116,11 +117,6 @@ Function startup()
     attackRunning = False ; Attack is in progress.
 
     defeatBar = (Self as Quest) as Osexbar
-
-    CustomScenes = PapyrusUtil.FormArray(100, none)
-    sceneWeights = PapyrusUtil.intArray(100, 0)
-
-    SendModEvent("odefeat_customScenes_PleaseSend")
     
     OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 
@@ -131,6 +127,12 @@ Function startup()
     InitBar(defeatBar)
     OUtils.RegisterForOUpdate(self)
     ostim.RegisterForGameLoadEvent(self)
+
+    ;CustomScenes[1] = Game.GetFormFromFile(0x00000800, "odeftest.esp")
+    ;sceneWeights[1] = 100
+
+    registerforkey(26)
+    registerforkey(27)
 
     if ostim.GetAPIVersion() < 23 
         debug.MessageBox("Your OStim version is out of date. ODefeat requires a newer version")
@@ -154,6 +156,7 @@ Function startup()
 
     Debug.notification("ODefeat installed")
 EndFunction
+
 
 Event OnGameLoad()
     if !OSANative.DetectionActive()
@@ -195,6 +198,12 @@ Event onKeyDown(int keyCode)
         return
     endif
 
+    if keyCode == 26
+        ;nothing
+    elseif keyCode == 27
+        ;DoCustomEvent()
+    endif
+
     if !GameComplete 
         if keyCode == minigame0KeyCode && nextInputNeeded == 0
             nextInputNeeded = 1
@@ -223,8 +232,6 @@ Function InitBar(OSexBar setupBar)
 
     setupbar.SetBarVisible(False)
 endFunction
-
-
 
 ;  ███╗   ███╗ █████╗ ██╗███╗   ██╗
 ;  ████╗ ████║██╔══██╗██║████╗  ██║
@@ -266,7 +273,6 @@ Function attemptAttack(Actor attacker, actor victim)
         ModEvent.Send(ocrime_event)
     endif 
 
-
     ;Setup Bar percents
     if (PlayerAttacker)
         difficulty = getActorAttackDifficulty(victim)
@@ -281,12 +287,8 @@ Function attemptAttack(Actor attacker, actor victim)
         OSANative.SendEvent(self, "FastDisableCombat")
     EndIf
 
-
-    
     bool victory = minigame(difficulty)
 
-    
-    
     ; On Struggle End
     if (Victory) ; the attacker won
         
@@ -1143,24 +1145,26 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
 EndEvent
 
 function DoCustomEvent()
-    form[] events = CustomScenes
-    events = PapyrusUtil.RemoveForm(events, none)
-
-    form[] weightedArray = PapyrusUtil.FormArray(0)
-
-    int i = 0
-    int max = events.Length
-    while i < max 
-        weightedArray = PapyrusUtil.MergeFormArray(weightedArray, PapyrusUtil.FormArray(sceneWeights[i], events[i]))
-
-        i += 1
-    endwhile 
-
-    form chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
-
-    OSANative.SendEvent(chosenEvent, "ODefeatCustomScene")
-
-EndFunction
+    string[] weightedArray = PapyrusUtil.StringArray(0)
+    
+    string eventkey = JMap.NextKey(oDefeatEventsJDB)
+    while eventkey
+        int tempint = JValue.SolveInt(oDefeatEventsJDB, "." + eventKey + ".Weighting")
+        weightedArray = PapyrusUtil.MergeStringArray(weightedArray, papyrusUtil.StringArray(tempint, eventkey))
+        eventkey = JMap.NextKey(oDefeatEventsJDB, eventkey)
+    endwhile
+    
+    string chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
+    string modEventName = JValue.SolveStr(oDefeatEventsJDB, "."+chosenEvent+".modEventName")
+    if (modEventName != "")
+        Writelog("Fired modevent: " + modEventName)
+        SendModEvent(modEventName)
+    Else
+        form eventForm = JValue.SolveForm(oDefeatEventsJDB, "."+chosenEvent+".Form")
+        Writelog("Fired event on form: "+eventForm)
+        OSANative.SendEvent(eventForm, "ODefeatCustomScene")
+    endif
+endFunction
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)
@@ -1170,14 +1174,6 @@ Function WriteLog(String OutputLog, bool error = false)
         Debug.Notification("ODefeat: " + OutputLog)
     endIF
 EndFunction
-
-
-
-
-
-
-
-
 
 ;; Base State
 function GotoNextState()    

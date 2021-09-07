@@ -1,0 +1,20 @@
+{
+    "Simple Slavery Middleman": {
+      "Enabled": 1,
+      "Form": "__formData|odeftest.esp|0x000800",
+      "modEventName" : "",
+      "Weighting": 100
+    },
+    "Simple Slavery Root": {
+      "Enabled": 1,
+      "Form": "__formData|SimpleSlavery.esp|0x00492E",
+      "modEventName" : "SSLV Entry",
+      "Weighting": 69
+    },
+    "idk it's junk": {
+      "Enabled": 0,
+      "Form": "__formData|meh.esp|0x000800",
+      "modEventName" : "",
+      "Weighting": 0
+    }
+  }

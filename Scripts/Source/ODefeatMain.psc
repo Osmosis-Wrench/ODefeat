@@ -251,6 +251,9 @@ Function attemptAttack(Actor attacker, actor victim)
 
     PlayerAttacker = (attacker == PlayerRef) 
 
+    weaponWasDrawn = PlayerRef.IsWeaponDrawn()
+
+
     attacker.SheatheWeapon()
     victim.SheatheWeapon()
     float difficulty
@@ -289,11 +292,19 @@ Function attemptAttack(Actor attacker, actor victim)
         
         if (PlayerAttacker) ; player won against an npc
             runStruggleAnim(attacker, victim, false, true)
+
+            attacker.DrawWeapon()
+
             doTrauma(victim)
+
+            RestorePlayerState()
+            UnregisterForAnimationEvent(PlayerRef, "GetUpEnd")
         else ; player is Defeated
             attacker.SetDontMove(true)
 
             PlayerDefenseFailedEvent(attacker)
+
+            UnregisterForAnimationEvent(PlayerRef, "GetUpEnd")
         endif
         attacker.SetDontMove(false)
     else ; victim won
@@ -310,6 +321,7 @@ Function attemptAttack(Actor attacker, actor victim)
             Game.triggerscreenblood(20)
             victim.StartCombat(attacker)
 			victim.DrawWeapon()
+
         else ; player escaped alive
             playerref.RestoreActorValue("health", (playerref.GetBaseActorValue("health") / 2.0) +  (math.abs( PlayerRef.GetActorValue("health") )))
             PlayerRef.SetDontMove(false)
@@ -317,10 +329,12 @@ Function attemptAttack(Actor attacker, actor victim)
             attacker.StartCombat(attacker)
 			attacker.DrawWeapon()
 
+            RestorePlayerState()
+            UnregisterForAnimationEvent(PlayerRef, "GetUpEnd")
+
             EnableCombat(true, forceReengage = true)
         endif
     endif
-
 
 
     attackRunning = false
@@ -438,14 +452,37 @@ Function struggleDontMove(actor attacker, actor victim, bool isPlayerAttacker, b
     endif
 endFunction
 
+Event OnAnimationEvent(ObjectReference akSource, string asEventName)
+    
+    if asEventName == "GetUpEnd"
+        RestorePlayerState()
+
+        UnregisterForAnimationEvent(PlayerRef, "GetUpEnd")
+    endif 
+EndEvent
+
+Function RestorePlayerState()
+    if wasInFirstPerson
+       game.ForceFirstPerson()
+    endif 
+    if weaponWasDrawn
+        PlayerRef.DrawWeapon()
+    endif 
+EndFunction
+
+bool wasInFirstPerson
+bool weaponWasDrawn
 Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool victimStayDown = false, bool noIdle = false)
     ; Run struggle animation.
     if (animate)
+        wasInFirstPerson = IsInFirstPerson()
+
+
+
         struggleActorPreventMove(attacker, true)
         struggleActorPreventMove(victim, true)
 
-        ; Should we use the old code for struggle scene, or use Ostim code?
-        ; For now I'll use old code.
+        RegisterForAnimationEvent(PlayerRef, "GetUpEnd")
 
         if (attacker == PlayerRef) ; Move scene to the location of the player.
             (posRef).MoveTo(attacker)
@@ -524,7 +561,6 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         Attacker.SetVehicle(none)
 
 
-
         if (!noIdle)
             Debug.SendAnimationEvent(attacker, "IdleForceDefaultState")
            ;Debug.SendAnimationEvent(Victim, "IdleForceDefaultState")
@@ -533,6 +569,8 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         if !victimStayDown
             Debug.SendAnimationEvent(victim, "IdleForceDefaultState")
         endif
+
+       
     endif
 EndFunction
 

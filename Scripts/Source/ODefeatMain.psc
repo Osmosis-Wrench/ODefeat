@@ -1156,16 +1156,9 @@ function DoCustomEvent()
     
     string chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
     string modEventName = JValue.SolveStr(oDefeatEventsJDB, "."+chosenEvent+".modEventName")
-    if (modEventName != "")
-        Writelog("Fired modevent: " + modEventName)
-        SendModEvent(modEventName)
-        CustomEvent_Notify(chosenEvent)
-    Else
-        form eventForm = JValue.SolveForm(oDefeatEventsJDB, "."+chosenEvent+".Form")
-        Writelog("Fired event on form: "+eventForm)
-        OSANative.SendEvent(eventForm, "ODefeatCustomScene")
-        CustomEvent_Notify(chosenEvent)
-    endif
+    Writelog("Fired modevent: " + modEventName)
+    SendModEvent(modEventName)
+    CustomEvent_Notify(chosenEvent)
 endFunction
 
 Function CustomEvent_Notify(string eventName)

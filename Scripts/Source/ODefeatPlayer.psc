@@ -48,8 +48,9 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 	if asEventName == "JumpLandEnd"
 		float healthPercent = playerref.GetActorValuePercentage("health")
 		if (healthPercent < 0.0)
-			Console("Player died from falling...")
 			ODefeatMain.KillPlayer()
+			Console("Player died from falling...")
+
 		endif 
 	endif 
 EndEvent
@@ -86,13 +87,14 @@ Function HandlePlayerDeath()
 			i += 1
 		EndWhile
 
+
+		ODefeatMain.KillPlayer()
 		Console("All enemies invalid, killing player")
 
-		ODefeatMain.KillPlayer()
 
 	else 
-		Console("Rolled player death")
 		ODefeatMain.KillPlayer()
+		Console("Rolled player death")
 	endif 
 EndFunction
 

@@ -50,7 +50,7 @@ bool Property EnablePlayerAggressor auto
 bool property MaleNPCsWontAssault auto
 bool property FemaleNPCsWontAssault auto
 
-int property RobPlayerChance auto
+int property RobPlayerChance auto ; REMOVE
 int Property MinValueToRob Auto
 
 bool bResetPosAfterEnd
@@ -62,6 +62,8 @@ Float attackStatus
 bool GameComplete
 bool attackRunning
 Osexbar defeatBar
+
+int property RobberyItemStealChance auto ;todo mcm
 
 Actor property AttackingActor auto
 Actor property VictimActor auto
@@ -119,6 +121,7 @@ Function startup()
     GameComplete = true ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
     DefeatSexChance = 100
+    RobberyItemStealChance = 50
 
     defeatBar = (Self as Quest) as Osexbar
 
@@ -1078,7 +1081,7 @@ Function RobPlayer(actor robber)
     int i = 0 
     int max = playerInv.Length
     while i < max 
-        if ChanceRoll(50)
+        if ChanceRoll(RobberyItemStealChance)
             form thing = playerInv[i]
 
             PlayerRef.RemoveItem(thing, aiCount = PlayerRef.GetItemCount(thing), abSilent = true, akOtherContainer = robber)

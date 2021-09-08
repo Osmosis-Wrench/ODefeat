@@ -62,6 +62,8 @@ bool GameComplete
 bool attackRunning
 Osexbar defeatBar
 
+int property RobberyItemStealChance auto ;todo mcm
+
 Actor property AttackingActor auto
 Actor property VictimActor auto
 
@@ -82,7 +84,7 @@ int property minigame1KeyCode auto
 int property endAttackKeyCode auto
 
 int property DefeatedAssaultChance auto
-int property DefeatedSkipChance auto
+int property DefeatedSkipChance auto ; todo make do something
 int property MoralityToAssault auto
 
 ;todo fix death animation glitch
@@ -118,6 +120,8 @@ Function startup()
     attackStatus = 0 
     GameComplete = true ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
+    DefeatSexChance = 100
+    RobberyItemStealChance = 50
 
     defeatBar = (Self as Quest) as Osexbar
 
@@ -720,13 +724,22 @@ location Function CellToLocation(cell c)
 EndFunction
 
 Function PlayerDefenseFailedEvent(actor aggressor) 
+    runStruggleAnim(aggressor, PlayerRef, false, false)
+
+    ostim.FadeToBlack()
+
+    if !ChanceRoll(DefeatSexChance)
+        PunishPlayer()
+        return 
+    endif 
+
+
     bool bUseFades = ostim.UseFades
     ostim.UseFades = false
     bool bAutoFades = ostim.UseAutoFades
     ostim.UseAutoFades = false
-    ostim.FadeToBlack()
+    
 
-    runStruggleAnim(aggressor, PlayerRef, false, false)
 
     startscene(aggressor, playerref)
 
@@ -1071,7 +1084,7 @@ Function RobPlayer(actor robber)
     int i = 0 
     int max = playerInv.Length
     while i < max 
-        if ChanceRoll(50)
+        if ChanceRoll(RobberyItemStealChance)
             form thing = playerInv[i]
 
             PlayerRef.RemoveItem(thing, aiCount = PlayerRef.GetItemCount(thing), abSilent = true, akOtherContainer = robber)
@@ -1131,15 +1144,19 @@ EndEvent
 
 Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
     if ostim.HasSceneMetadata("odefeat_victim") 
-        if !ostim.HasSceneMetadata("odefeat_escaped") 
-            Utility.Wait(2)
-            DoCustomEvent()
-            EnableCombat(true) 
+        if !ostim.HasSceneMetadata("odefeat_escaped")
+            PunishPlayer()
         endif 
         ostim.SkipEndingFadein = false
         ostim.ResetPosAfterSceneEnd = bResetPosAfterEnd
     endif 
 EndEvent
+
+Function PunishPlayer() ;todo remove this 
+    Utility.Wait(2)
+    DoCustomEvent()
+    EnableCombat(true)
+EndFunction
 
 function DoCustomEvent()
     string[] weightedArray = PapyrusUtil.StringArray(0)

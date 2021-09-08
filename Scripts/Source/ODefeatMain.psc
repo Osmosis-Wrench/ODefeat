@@ -85,6 +85,7 @@ int property endAttackKeyCode auto
 int property DefeatedAssaultChance auto
 int property DefeatKillChance auto
 int Property DefeatCustomEventChance Auto ;todo mcm
+int Property DefeatSexChance Auto ; todo mcm
 
 ;todo fix death animation glitch
 
@@ -117,6 +118,7 @@ Function startup()
     attackStatus = 0 
     GameComplete = true ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
+    DefeatSexChance = 100
 
     defeatBar = (Self as Quest) as Osexbar
 
@@ -715,13 +717,22 @@ location Function CellToLocation(cell c)
 EndFunction
 
 Function PlayerDefenseFailedEvent(actor aggressor) 
+    runStruggleAnim(aggressor, PlayerRef, false, false)
+
+    ostim.FadeToBlack()
+
+    if !ChanceRoll(DefeatSexChance)
+        PunishPlayer()
+        return 
+    endif 
+
+
     bool bUseFades = ostim.UseFades
     ostim.UseFades = false
     bool bAutoFades = ostim.UseAutoFades
     ostim.UseAutoFades = false
-    ostim.FadeToBlack()
+    
 
-    runStruggleAnim(aggressor, PlayerRef, false, false)
 
     startscene(aggressor, playerref)
 
@@ -1129,26 +1140,31 @@ EndEvent
 Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
     if ostim.HasSceneMetadata("odefeat_victim") 
         if !ostim.HasSceneMetadata("odefeat_escaped") 
-            Utility.Wait(2)
-
-            if ChanceRoll(DefeatKillChance)
-                EnableCombat(true)
-                KillPlayer()
-            elseif ChanceRoll(DefeatCustomEventChance)
-                DoCustomEvent()
-                EnableCombat(true)
-            else 
-                if ChanceRoll(RobPlayerchance)
-                    RobPlayer(ostim.GetAggressiveActor())
-                endif 
-                MoveToSafeSpot()
-                EnableCombat(true)
-            endif  
+            PunishPlayer()
         endif 
         ostim.SkipEndingFadein = false
         ostim.ResetPosAfterSceneEnd = bResetPosAfterEnd
     endif 
 EndEvent
+
+Function PunishPlayer()
+    Utility.Wait(2)
+
+    if ChanceRoll(DefeatKillChance)
+        EnableCombat(true)
+        KillPlayer()
+    elseif ChanceRoll(DefeatCustomEventChance)
+        DoCustomEvent()
+        EnableCombat(true)
+    else 
+        if ChanceRoll(RobPlayerchance)
+            RobPlayer(ostim.GetAggressiveActor())
+        endif 
+            MoveToSafeSpot()
+            EnableCombat(true)
+        endif  
+
+EndFunction
 
 function DoCustomEvent()
     string[] weightedArray = PapyrusUtil.StringArray(0)

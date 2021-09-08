@@ -84,8 +84,9 @@ int property minigame1KeyCode auto
 int property endAttackKeyCode auto
 
 int property DefeatedAssaultChance auto
-int property DefeatedSkipChance auto ; todo make do something
+int property DefeatedSkipChance auto
 int property MoralityToAssault auto
+int property DefeatSexChance auto
 
 ;todo fix death animation glitch
 ;todo add follower options
@@ -1144,7 +1145,7 @@ EndEvent
 
 Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
     if ostim.HasSceneMetadata("odefeat_victim") 
-        if !ostim.HasSceneMetadata("odefeat_escaped")
+        if !ostim.HasSceneMetadata("odefeat_escaped") 
             PunishPlayer()
         endif 
         ostim.SkipEndingFadein = false
@@ -1152,10 +1153,10 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
     endif 
 EndEvent
 
-Function PunishPlayer() ;todo remove this 
+Function PunishPlayer()
     Utility.Wait(2)
     DoCustomEvent()
-    EnableCombat(true)
+    EnableCombat(true) 
 EndFunction
 
 function DoCustomEvent()

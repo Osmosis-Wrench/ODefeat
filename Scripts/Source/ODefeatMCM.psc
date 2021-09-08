@@ -26,8 +26,8 @@ event OnPageDraw()
     AddHeaderOption(FONT_CUSTOM("Core Options", pink))
     AddToggleOptionST("EnablePlayerVictim_State", "Enable Player as Victim", main.EnablePlayerVictim)
     AddToggleOptionST("EnablePlayerAggressor_State", "Enable Player as Aggressor", main.EnablePlayerAggressor)
-    AddToggleOptionST("MaleNPCsWontAssault_State", "Male NPCs as Aggressors", !main.MaleNPCsWontAssault)
-    AddToggleOptionST("FemaleNPCsWontAssault_State", "Female NPCs as Aggressors", !main.femaleNPCsWontAssault)
+    AddToggleOptionST("MaleNPCsWontAssault_State", "Male NPC's as Aggressors", !main.MaleNPCsWontAssault)
+    AddToggleOptionST("FemaleNPCsWontAssault_State", "Female NPC's as Aggressors", !main.femaleNPCsWontAssault)
 
     AddHeaderOption(FONT_CUSTOM("Keybinds", blue))
     AddKeyMapOptionST("startAttackKeyCode_State", "Start Assault Key", main.startAttackKeyCode)
@@ -86,7 +86,7 @@ state MaleNPCsWontAssault_State
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("If enabled, the player can be assualted by male NPCs.")
+        SetInfoText("If enabled, the player can be assualted by Female NPC's.")
     endevent
 
     event OnDefaultST(string state_id)
@@ -102,7 +102,7 @@ state FemaleNPCsWontAssault_State
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("If enabled, the player can be assualted by Female NPCs.")
+        SetInfoText("If enabled, the player can be assualted by Female NPC's.")
     endevent
 
     event OnDefaultST(string state_id)

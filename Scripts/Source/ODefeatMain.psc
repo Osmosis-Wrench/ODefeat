@@ -122,6 +122,8 @@ Function startup()
 
     droppedItems = PapyrusUtil.ObjRefArray(6, none)
 
+    posref = playerref.PlaceAtMe((Quest.GetQuest("0SA") as _oOmni).OBlankStatic) as ObjectReference
+
     InitBar(defeatBar)
     OUtils.RegisterForOUpdate(self)
     ostim.RegisterForGameLoadEvent(self)
@@ -484,10 +486,6 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
 
         RegisterForAnimationEvent(PlayerRef, "GetUpEnd")
 
-        if !posref
-            Console("Posref not found, making new one")
-            posref = GetBlankObject()
-        endif 
         if (attacker == PlayerRef) ; Move scene to the location of the player.
             (posRef).MoveTo(attacker)
         else

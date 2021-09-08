@@ -50,7 +50,6 @@ bool Property EnablePlayerAggressor auto
 bool property MaleNPCsWontAssault auto
 bool property FemaleNPCsWontAssault auto
 
-int property RobPlayerChance auto
 int Property MinValueToRob Auto
 
 bool bResetPosAfterEnd
@@ -83,10 +82,12 @@ int property minigame1KeyCode auto
 int property endAttackKeyCode auto
 
 int property DefeatedAssaultChance auto
-int property DefeatKillChance auto
-int Property DefeatCustomEventChance Auto ;todo mcm
+int property DefeatedSkipChance auto
+int property MoralityToAssault auto
 
 ;todo fix death animation glitch
+;todo add follower options
+;todo doCalm and doTrauma are still from sl defeat I think, should probably rewrite them 0.o
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -173,18 +174,21 @@ Event OnGameLoad()
     RegisterForKey(minigame0KeyCode) ;leftshift - Minigame key 1
     RegisterForKey(minigame1KeyCode) ;rightshift - Minigame key 2
     RegisterForKey(endAttackKeyCode) ;Space - exit minigame fast
+
+    ; Native Defeat Events:
+    RegisterForModEvent("oDefeat_robberyEvent", "robberyEvent")
+    RegisterForModEvent("oDefeat_safeWakeupEvent", "safeWakeupEvent")
+    RegisterForModEvent("oDefeat_killEvent", "killEvent")
 EndEvent
 
 Function SetDefaultSettings()
-    EnablePlayerVictim = true
+    EnablePlayerVictim = false
     EnablePlayerAggressor = true
 
     MaleNPCsWontAssault = false 
     FemaleNPCsWontAssault = false 
 
-    RobPlayerChance = 0
     MinValueToRob = 350
-    DefeatCustomEventChance = 0
 
     startAttackKeyCode = 34 ;g
     minigame0KeyCode = 42 ;leftshift
@@ -192,7 +196,8 @@ Function SetDefaultSettings()
     endAttackKeyCode = 57 ;spacebar
 
     DefeatedAssaultChance = 100
-    DefeatKillChance = 0
+    DefeatedSkipChance = 0
+    MoralityToAssault = 1
 endfunction 
 
 Event onKeyDown(int keyCode)
@@ -203,7 +208,7 @@ Event onKeyDown(int keyCode)
     if keyCode == 26
         ;nothing
     elseif keyCode == 27
-        ;DoCustomEvent()
+        DoCustomEvent()
     endif
 
     if !GameComplete 
@@ -1043,8 +1048,6 @@ Function stripActor(Actor target)
 	endif
 EndFunction
 
-
-
 Function stripItem(actor target, form item, bool doImpulse = true)
     ; Strip a specific item from an actor.
     if (item)
@@ -1059,6 +1062,7 @@ Function stripItem(actor target, form item, bool doImpulse = true)
 endFunction
 
 bool wasRobbed
+
 Function RobPlayer(actor robber)
     wasRobbed = true 
     form[] playerInv = AddAllItemsToArray(playerref,false, false, true)
@@ -1072,7 +1076,6 @@ Function RobPlayer(actor robber)
 
             PlayerRef.RemoveItem(thing, aiCount = PlayerRef.GetItemCount(thing), abSilent = true, akOtherContainer = robber)
         endif 
-
 
         i += 1
     endwhile 
@@ -1130,20 +1133,8 @@ Event OStimTotalEnd(string eventName, string strArg, float numArg, Form sender)
     if ostim.HasSceneMetadata("odefeat_victim") 
         if !ostim.HasSceneMetadata("odefeat_escaped") 
             Utility.Wait(2)
-
-            if ChanceRoll(DefeatKillChance)
-                EnableCombat(true)
-                KillPlayer()
-            elseif ChanceRoll(DefeatCustomEventChance)
-                DoCustomEvent()
-                EnableCombat(true)
-            else 
-                if ChanceRoll(RobPlayerchance)
-                    RobPlayer(ostim.GetAggressiveActor())
-                endif 
-                MoveToSafeSpot()
-                EnableCombat(true)
-            endif  
+            DoCustomEvent()
+            EnableCombat(true) 
         endif 
         ostim.SkipEndingFadein = false
         ostim.ResetPosAfterSceneEnd = bResetPosAfterEnd
@@ -1161,7 +1152,15 @@ function DoCustomEvent()
     endwhile
     
     string chosenEvent = weightedArray[osanative.randomint(0, weightedArray.Length - 1)]
-    string modEventName = JValue.SolveStr(oDefeatEventsJDB, "."+chosenEvent+".modEventName")
+    string modEventName
+
+    if (!chosenEvent) ; In case no valid death events are selected, falls back to safe wakeup.
+        modEventName = "safeWakeupEvent"
+        chosenEvent = "oDefeat Fallback Event"
+        Writelog("No valid events enabled, fallback event triggered.", true)
+    else
+        modEventName = JValue.SolveStr(oDefeatEventsJDB, "."+chosenEvent+".modEventName")
+    endif
     Writelog("Fired modevent: " + modEventName)
     SendModEvent(modEventName)
     CustomEvent_Notify(chosenEvent)
@@ -1174,6 +1173,22 @@ Function CustomEvent_Notify(string eventName)
         ModEvent.Send(odefeat_CustomEvent)
     endif
 endFunction
+
+event robberyEvent(string eventName, string arg_s, float argNum, form sender)
+    writelog(1)
+    RobPlayer(ostim.GetAggressiveActor())
+    MoveToSafeSpot()
+endEvent
+
+event safeWakeupEvent(string eventName, string arg_s, float argNum, form sender)
+    writelog(2)
+    MoveToSafeSpot()
+endEvent
+
+event killEvent(string eventName, string arg_s, float argNum, form sender)
+    writelog(3)
+    KillPlayer()
+endEvent
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)

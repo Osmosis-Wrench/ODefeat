@@ -1,0 +1,20 @@
+{
+    "ODefeat Robbery Event": {
+      "Form": "__formData|ODefeat.esp|0x0012C4",
+      "modEventName" : "oDefeat_robberyEvent",
+      "Weighting": 50,
+      "Description" : "You wakeup nearby to your defeat location, missing items over a certain value."
+    },
+    "ODefeat Safe Wakeup Event": {
+        "Form": "__formData|ODefeat.esp|0x0012C4",
+        "modEventName" : "oDefeat_safeWakeupEvent",
+        "Weighting": 50,
+        "Description" : "You wakeup nearby to your defeat location."
+      },
+    "ODefeat Player Death Event": {
+        "Form": "__formData|ODefeat.esp|0x0012C4",
+        "modEventName" : "oDefeat_killEvent",
+        "Weighting": 0,
+        "Description" : "After an defeat, you straight up fucking die."
+      }
+  }

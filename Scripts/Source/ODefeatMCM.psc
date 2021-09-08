@@ -29,17 +29,14 @@ event OnPageDraw()
     AddToggleOptionST("MaleNPCsWontAssault_State", "Male NPCs as Aggressors", !main.MaleNPCsWontAssault)
     AddToggleOptionST("FemaleNPCsWontAssault_State", "Female NPCs as Aggressors", !main.femaleNPCsWontAssault)
 
-    AddHeaderOption(FONT_CUSTOM("Keybinds", blue))
+    AddHeaderOption(FONT_CUSTOM("Rules", blue))
+    AddSliderOptionST("MoralityToAssault_State", "Morality to Assault", main.MoralityToAssault)
+
+    AddHeaderOption(FONT_CUSTOM("Keybinds", pink))
     AddKeyMapOptionST("startAttackKeyCode_State", "Start Assault Key", main.startAttackKeyCode)
     AddKeyMapOptionST("minigame0KeyCode_State", "Minigame Key Left", main.minigame0KeyCode)
     AddKeyMapOptionST("minigame1KeyCode_State", "Minigame Key Right", main.minigame1KeyCode)
     AddKeyMapOptionST("endAttackKeyCode_State", "End Assault Key", main.endAttackKeyCode)
-
-    AddHeaderOption(FONT_CUSTOM("Probabilities", pink))
-    AddSliderOptionST("DefeatedAssaultChance_State", "Assault Chance", main.DefeatedAssaultChance)
-    AddSliderOptionST("DefeatKillChance_State", "Death Chance", main.DefeatKillChance)
-    AddSliderOptionST("RobPlayerChance_State", "Rob Player Chance", main.RobPlayerChance)
-    AddSliderOptionST("MinValueToRob_State", "Minimum value to steal", main.MinValueToRob)
     
     if (release == false)
         AddHeaderOption(FONT_CUSTOM("Dev Options", blue))
@@ -58,7 +55,7 @@ state EnablePlayerVictim_State
     endevent
 
     event OnDefaultST(string state_id)
-        Main.EnablePlayerVictim = True
+        Main.EnablePlayerVictim = false
         SetToggleOptionValueST(Main.EnablePlayerVictim)
     endevent
 endState
@@ -110,6 +107,25 @@ state FemaleNPCsWontAssault_State
         SetToggleOptionValueST(Main.FemaleNPCsWontAssault)
     endevent
 endState
+
+state MoralityToAssault_State
+	event OnDefaultST(string state_id)
+		main.MoralityToAssault = 1
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("The morality level required for an NPC to assault you. \n |0:Any Crime|1:Violent Crime|2:Property Crime|3:No Crime|")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.MoralityToAssault, 0, 3, 1, 1)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.MoralityToAssault = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
 
 state startAttackKeyCode_State
 	event OnDefaultST(string state_id)
@@ -172,82 +188,6 @@ state endAttackKeyCode_State
 	event OnKeyMapChangeST(string state_id, int keycode)
 		main.endAttackKeyCode = keycode
 		SetKeyMapOptionValueST(keycode)
-	endevent
-endstate
-
-state DefeatedAssaultChance_State
-	event OnDefaultST(string state_id)
-		main.DefeatedAssaultChance = 100
-	endevent
-
-	event OnHighlightST(string state_id)
-		SetInfoText("The chance you will be assaulted after dying with valid enemies nearby.")
-	endevent
-	
-	event OnSliderOpenST(string state_id)
-		SetSliderDialog(main.DefeatedAssaultChance, 0, 100, 1.0, 100)
-	endevent
-	
-	event OnSliderAcceptST(string state_id, float f)
-		main.DefeatedAssaultChance = f as int
-		SetSliderOptionValueST(f)
-	endevent
-endstate
-
-state DefeatKillChance_State
-	event OnDefaultST(string state_id)
-		main.DefeatKillChance = 0
-	endevent
-
-	event OnHighlightST(string state_id)
-		SetInfoText("The chance you will be killed after being assaulted.")
-	endevent
-	
-	event OnSliderOpenST(string state_id)
-		SetSliderDialog(main.DefeatKillChance, 0, 100, 1.0, 0)
-	endevent
-	
-	event OnSliderAcceptST(string state_id, float f)
-		main.DefeatKillChance = f as int
-		SetSliderOptionValueST(f)
-	endevent
-endstate
-
-state RobPlayerChance_State
-	event OnDefaultST(string state_id)
-		main.RobPlayerChance = 0
-	endevent
-
-	event OnHighlightST(string state_id)
-		SetInfoText("The chance you will be robbed after being assaulted.")
-	endevent
-	
-	event OnSliderOpenST(string state_id)
-		SetSliderDialog(main.RobPlayerChance, 0, 100, 1.0, 0)
-	endevent
-	
-	event OnSliderAcceptST(string state_id, float f)
-		main.RobPlayerChance = f as int
-		SetSliderOptionValueST(f)
-	endevent
-endstate
-
-state MinValueToRob_State
-	event OnDefaultST(string state_id)
-		main.MinValueToRob = 350
-	endevent
-
-	event OnHighlightST(string state_id)
-		SetInfoText("Any item over this value can be stolen.")
-	endevent
-	
-	event OnSliderOpenST(string state_id)
-		SetSliderDialog(main.MinValueToRob, 0, 2500, 10.0, 350)
-	endevent
-	
-	event OnSliderAcceptST(string state_id, float f)
-		main.MinValueToRob = f as int
-		SetSliderOptionValueST(f)
 	endevent
 endstate
 

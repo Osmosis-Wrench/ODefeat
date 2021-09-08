@@ -1,6 +1,6 @@
 Scriptname ODefeatMCM_EventsPage extends nl_mcm_module
 
-ODefeatMain property ODMain auto
+ODefeatMain property main auto
 
 String Blue = "#6699ff"
 String Pink = "#ff3389"
@@ -26,7 +26,13 @@ Event OnPageDraw()
     SetCursorFillMode(TOP_TO_BOTTOM)
     AddHeaderOption(FONT_CUSTOM("Event Controls:", Blue))
     AddTextOptionST("rebuild_database_state", "Rebuild Database", "Click")
-    AddHeaderOption(FONT_CUSTOM("After Death Events:", Pink))
+
+    AddHeaderOption(FONT_CUSTOM("Probabilities", pink))
+    AddSliderOptionST("DefeatedAssaultChance_State", "Assault Chance", main.DefeatedAssaultChance)
+    AddSliderOptionST("DefeatedSkipChance_State", "Skip Assault Chance", main.DefeatedSkipChance) ;todo make this do something in main or player
+    AddSliderOptionST("MinValueToRob_State", "Minimum value to steal", main.MinValueToRob)
+
+    AddHeaderOption(FONT_CUSTOM("After Death Events:", Blue))
     BuildPageContents()
 EndEvent
 
@@ -62,7 +68,7 @@ State event_slider_state
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("Set the chance for " + state_id)
+        SetInfoText("Set the chance for " + state_id +" \n Description: "+ JValue.SolveStr(oDefeatEventsJDB, "."+state_id+".Description"))
     endevent
 EndState
 
@@ -91,6 +97,63 @@ Function BuildDatabase()
     endwhile
     JValue.Release(eventFilelist)
 EndFunction
+
+state DefeatedAssaultChance_State
+	event OnDefaultST(string state_id)
+		main.DefeatedAssaultChance = 100
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("The chance you will be assaulted after dying with valid enemies nearby.")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.DefeatedAssaultChance, 0, 100, 1.0, 100)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.DefeatedAssaultChance = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
+
+state DefeatedSkipChance_State
+	event OnDefaultST(string state_id)
+		main.DefeatedSkipChance = 0
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("The chance that after dying you'll get a post death event, without being assaulted.")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.DefeatedSkipChance, 0, 100, 1.0, 0)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.DefeatedSkipChance = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
+
+state MinValueToRob_State
+	event OnDefaultST(string state_id)
+		main.MinValueToRob = 350
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("Any item over this value can be stolen.")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.MinValueToRob, 0, 2500, 10.0, 350)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.MinValueToRob = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
 
 ; This just makes life easier sometimes.
 Function WriteLog(String OutputLog, bool error = false)

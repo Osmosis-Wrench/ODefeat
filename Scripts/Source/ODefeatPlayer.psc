@@ -5,6 +5,7 @@ actor playerref
 ODefeatMain odefeat
 
 bool Property EnableVictim Auto ; do not modify directly
+
 Event OnInit()
 	playerref = game.GetPlayer()
 	odefeat = odefeatmain.GetODefeat()
@@ -20,19 +21,17 @@ Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile,
 	if !EnableVictim
 		return 
 	endif
-	
+
 	if playerref.IsInKillMove()
 		playerref.DamageAV("health", 30.0)
 	endif 
 
 	float healthPercent = playerref.GetActorValuePercentage("health")
 	
-
 	if (healthPercent < 0.0) && OSANative.TryLock("mtx_od_deathhandle")
 		Console("Player is dead")
 
 		HandlePlayerDeath()
-		 
 
 		osanative.Unlock("mtx_od_deathhandle")
 	endif 
@@ -55,14 +54,12 @@ EndEvent
 
 Function HandlePlayerDeath()
 	actor[] enemies = osanative.sortactorsbydistance(playerref, PO3_SKSEFunctions.GetCombatTargets(playerref))
-	if enemies.Length < 1
+	if (enemies.Length < 1)
 		ODefeatMain.KillPlayer()
 		Console("No enemies...")
 	endif 
 
-
-	if ChanceRoll(odefeat.DefeatedAssaultChance)
-		
+	if (ChanceRoll(odefeat.DefeatedAssaultChance))
 		if odefeat.MaleNPCsWontAssault
 			enemies = OSANative.RemoveActorsWithGender(enemies, 0)
 		endif 
@@ -74,10 +71,9 @@ Function HandlePlayerDeath()
 		int max = enemies.Length
 		while i < max 
 			actor enemy = enemies[i]
-			if (enemy.getav("morality") < 1)
+			if (enemy.getav("morality") <= odefeat.MoralityToAssault)
 				if odefeat.isValidAttackTarget(enemy)
 					odefeat.attemptAttack(enemy, playerref)
-
 					return 
 				endif 
 			endif 
@@ -85,16 +81,14 @@ Function HandlePlayerDeath()
 			i += 1
 		EndWhile
 
-
 		ODefeatMain.KillPlayer()
 		Console("All enemies invalid, killing player")
-
-
 	else 
 		ODefeatMain.KillPlayer()
-		Console("Rolled player death")
+		Console("No valid scene could be created, killing player as fallback.")
 	endif 
 EndFunction
+
 
 Function KnockdownAnimation()
 	if IsInFirstPerson()

@@ -1,0 +1,8 @@
+{
+  "Simple Slavery Enslavement": {
+    "Form": "__formData|SimpleSlavery.esp|0x00492E",
+    "modEventName" : "SSLV Entry",
+    "Weighting": 69,
+    "Description" : "After a defeat, you wake up in the Simple Slavery auction house as the next item to be sold."
+  }
+}

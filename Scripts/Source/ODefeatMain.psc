@@ -55,6 +55,8 @@ int Property MinValueToRob Auto
 
 bool bResetPosAfterEnd
 
+float property MinigameDifficultyModifier auto ;todo mcm
+
 int stripStage
 Float attackStatus
 bool GameComplete
@@ -117,6 +119,8 @@ Function startup()
     attackRunning = False ; Attack is in progress.
 
     defeatBar = (Self as Quest) as Osexbar
+
+    MinigameDifficultyModifier = 0.0
     
     OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 
@@ -1112,7 +1116,7 @@ Float Function getActorAttackDifficulty(actor target)
     if (ret < 5.0)
         ret = 5.0
     endif
-    return ret
+    return ret + MinigameDifficultyModifier
 endFunction
 
 Event OStimEnd(string eventName, string strArg, float numArg, Form sender)

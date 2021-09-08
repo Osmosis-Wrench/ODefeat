@@ -1,13 +1,11 @@
 ScriptName ODefeatPlayer Extends ReferenceAlias
 import outils 
 
-bool pause
 actor playerref 
 ODefeatMain odefeat
 
 bool Property EnableVictim Auto ; do not modify directly
 Event OnInit()
-	pause = false
 	playerref = game.GetPlayer()
 	odefeat = odefeatmain.GetODefeat()
 
@@ -19,7 +17,7 @@ Event OnPlayerLoadGame()
 EndEvent
 
 Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
-	if pause || !EnableVictim
+	if !EnableVictim
 		return 
 	endif
 	
@@ -30,18 +28,18 @@ Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile,
 	float healthPercent = playerref.GetActorValuePercentage("health")
 	
 
-	if (healthPercent < 0.0) && !pause
-		pause = true 
+	if (healthPercent < 0.0) && OSANative.TryLock("mtx_od_deathhandle")
 		Console("Player is dead")
 
 		HandlePlayerDeath()
+		 
 
-		pause = false
+		osanative.Unlock("mtx_od_deathhandle")
 	endif 
 EndEvent
 
 Event OnAnimationEvent(ObjectReference akSource, string asEventName)
-	if pause || !EnableVictim
+	if !EnableVictim
 		return 
 	endif
 

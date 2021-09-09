@@ -54,7 +54,7 @@ int Property MinValueToRob Auto
 
 bool bResetPosAfterEnd
 
-float property MinigameDifficultyModifier auto ;todo mcm
+float property MinigameDifficultyModifier auto
 
 int stripStage
 Float attackStatus
@@ -62,7 +62,7 @@ bool GameComplete
 bool attackRunning
 Osexbar defeatBar
 
-int property RobberyItemStealChance auto ;todo mcm
+int property RobberyItemStealChance auto
 
 Actor property AttackingActor auto
 Actor property VictimActor auto
@@ -87,10 +87,10 @@ int property DefeatedAssaultChance auto
 int property DefeatedSkipChance auto
 int property MoralityToAssault auto
 int property DefeatSexChance auto
+bool property FollowersGetAssaulted auto
 
 ;todo fix death animation glitch
 ;todo add follower options
-;todo doCalm and doTrauma are still from sl defeat I think, should probably rewrite them 0.o
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -172,7 +172,7 @@ EndFunction
 
 Event OnGameLoad()
     if !OSANative.DetectionActive()
-        Console("Enabling combat")
+        Writelog("Enabling combat")
         EnableCombat(true)
     endif 
     RegisterForModEvent("ostim_end", "OstimEnd")
@@ -207,6 +207,7 @@ Function SetDefaultSettings()
     DefeatedAssaultChance = 100
     DefeatedSkipChance = 0
     MoralityToAssault = 1
+    FollowersGetAssaulted = true
 endfunction 
 
 Event onKeyDown(int keyCode)
@@ -326,7 +327,7 @@ Function attemptAttack(Actor attacker, actor victim)
         endif
         attacker.SetDontMove(false)
     else ; victim won
-        Console("victim won")
+        Writelog("victim won")
         runStruggleAnim(attacker, victim, false, false, true)
         if PlayerAttacker
             Attacker.PushActorAway(victim, 0) ;seems to fail on some actors?
@@ -503,7 +504,7 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         RegisterForAnimationEvent(PlayerRef, "GetUpEnd")
 
         if !posref
-            Console("Posref not found, making new one")
+            Writelog("Posref not found, making new one")
             posref = GetBlankObject()
         endif 
         if (attacker == PlayerRef) ; Move scene to the location of the player.
@@ -528,8 +529,8 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
         float terrainMagnetOffsetHeight = 0.0
 
         if GetObjectUnderFeet(PlayerRef) == none 
-            Console("odefeat alignment warning")
-            Console(GetObjectUnderFeet(PlayerRef))
+            Writelog("odefeat alignment warning")
+            Writelog(GetObjectUnderFeet(PlayerRef))
 
             CenterLocation[2] = CenterLocation[2] + 33
         else 
@@ -638,17 +639,17 @@ Function MoveToSafeSpot()
         location currLocation = playerref.GetCurrentLocation()
         ObjectReference marker = OSANative.GetLocationMarker(currLocation)
 
-       ; Console(currLocation.GetName())
-       ; console(marker)
+       ; Writelog(currLocation.GetName())
+       ; Writelog(marker)
 
         bool exit = false
         while (marker.IsInInterior() || marker == none) && !exit
             currLocation = GetParentLocation(currLocation)
             if currLocation
-                Console(currLocation.GetName())
+                Writelog(currLocation.GetName())
                 marker = OSANative.GetLocationMarker(currLocation)
             else 
-                Console("Warning: no safe location found")
+                Writelog("Warning: no safe location found")
                 exit = true
             endif 
         endwhile 
@@ -668,7 +669,7 @@ Function MoveToSafeSpot()
     while i < l 
         location loc = CellToLocation(cells[i])
 
-       ; Console(loc)
+       ; Writelog(loc)
 
         if loc == none 
             TargetCell = cells[i]
@@ -703,10 +704,10 @@ Function MoveToSafeSpot()
     if isinfirstperson()
 
         game.ForceFirstPerson()
-        Console("in first person")
+        Writelog("in first person")
         debug.SendAnimationEvent(playerref, "TG05_GetUp")
     else 
-        Console("not in first person")
+        Writelog("not in first person")
         PlayerRef.PushActorAway(playerref, 0.1)
     endif 
 
@@ -751,8 +752,8 @@ Function PlayerDefenseFailedEvent(actor aggressor)
     actor[] followers = lastKnownAllies
    
 
-    if followers.Length > 0
-        console("Player has followers")
+    if (FollowersGetAssaulted && followers.Length > 0)
+        Writelog("Player has followers & follower assault enabled")
 
         actor[] allNearbyEnemies = lastKnownEnemies
 
@@ -791,28 +792,35 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
                     char.moveto(followers[i])
                     StartScene(char, followers[i])
-                    Console("Partner found : " + char.GetDisplayName())
+                    Writelog("Partner found : " + char.GetDisplayName())
                 endif 
 
                 j += 1
             endwhile
 
             if !found 
-                Console("No partner found")
+                Writelog("No partner found")
                 dotrauma(followers[i])
             endif 
 
             i += 1
         EndWhile 
+    elseif (!FollowersGetAssaulted && followers.Length > 0)
+        writelog("Player has followers & follower assault disabled")
+        int i = 0
+        int l = followers.Length
+        while i < l
+            dotrauma(followers[i])
+            i += 1
+        endwhile
     else 
-        console("Player has no followers")
+        Writelog("Player has no followers")
     endif 
 
     Utility.Wait(0.5)
     while (!ostim.IsActorActive(PlayerRef)) && ostim.AnimationRunning()
         Utility.Wait(0.5)
     endwhile
-
 
     ostim.FadeFromBlack()
 
@@ -954,7 +962,7 @@ endfunction
 actor[] lastKnownEnemies 
 actor[] lastKnownAllies
 
-Bool Function doTrauma(Actor target, bool enter = true)
+Bool Function doTrauma(Actor target, bool enter = true) ; credit: sexlab defeat - pretty much verbatim
     if (target.IsDead() || Target == PlayerRef)
         return false
     endif
@@ -1001,7 +1009,7 @@ Function RandomizeAngle(actor target)
     target.SetAngle(target.GetAngleX(), target.GetAngleY(), OSANative.RandomFloat(0.0, 359.9)) 
 endfunction
 
-Bool Function doCalm(Actor target, bool dontMove = true, bool enter = true)
+Bool Function doCalm(Actor target, bool dontMove = true, bool enter = true)  ; credit: sexlab defeat - pretty much verbatim
     if (Enter)
         if (!Target.IsInFaction(CalmFaction))
             Target.AddToFaction(CalmFaction)

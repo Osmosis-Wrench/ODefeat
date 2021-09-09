@@ -30,8 +30,11 @@ event OnPageDraw()
     AddToggleOptionST("FemaleNPCsWontAssault_State", "Female NPCs as Aggressors", !main.femaleNPCsWontAssault)
 
     AddHeaderOption(FONT_CUSTOM("Rules", blue))
+    AddSliderOptionST("MinigameDifficultyModifier_State", "Minigame Difficulty Modifier", main.MinigameDifficultyModifier)
     AddSliderOptionST("MoralityToAssault_State", "Morality to Assault", main.MoralityToAssault)
-
+    AddToggleOptionST("FollowersGetAssaulted_State", "Followers are Assaulted", main.FollowersGetAssaulted)
+    
+    SetCursorPosition(1)
     AddHeaderOption(FONT_CUSTOM("Keybinds", pink))
     AddKeyMapOptionST("startAttackKeyCode_State", "Start Assault Key", main.startAttackKeyCode)
     AddKeyMapOptionST("minigame0KeyCode_State", "Minigame Key Left", main.minigame0KeyCode)
@@ -108,6 +111,25 @@ state FemaleNPCsWontAssault_State
     endevent
 endState
 
+state MinigameDifficultyModifier_State
+	event OnDefaultST(string state_id)
+		main.MinigameDifficultyModifier = 0
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("Sets a dificulty modifier for the Minigame.")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.MinigameDifficultyModifier, -5, 5, 1, 0)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.MinigameDifficultyModifier = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
+
 state MoralityToAssault_State
 	event OnDefaultST(string state_id)
 		main.MoralityToAssault = 1
@@ -126,6 +148,22 @@ state MoralityToAssault_State
 		SetSliderOptionValueST(f)
 	endevent
 endstate
+
+state FollowersGetAssaulted_State
+    event OnSelectST(string state_id)
+        Main.FollowersGetAssaulted = !Main.FollowersGetAssaulted
+        SetToggleOptionValueST(Main.FollowersGetAssaulted)
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("If enabled, the player can perform assaults.")
+    endevent
+
+    event OnDefaultST(string state_id)
+        Main.FollowersGetAssaulted = True
+        SetToggleOptionValueST(Main.FollowersGetAssaulted)
+    endevent
+endState
 
 state startAttackKeyCode_State
 	event OnDefaultST(string state_id)

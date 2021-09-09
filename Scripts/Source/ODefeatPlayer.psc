@@ -29,7 +29,7 @@ Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile,
 	float healthPercent = playerref.GetActorValuePercentage("health")
 	
 	if (healthPercent < 0.0) && OSANative.TryLock("mtx_od_deathhandle")
-		Console("Player is dead")
+		Writelog("Player is dead")
 
 		HandlePlayerDeath()
 
@@ -46,7 +46,7 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 		float healthPercent = playerref.GetActorValuePercentage("health")
 		if (healthPercent < 0.0)
 			ODefeatMain.KillPlayer()
-			Console("Player died from falling...")
+			Writelog("Player died from falling...")
 
 		endif 
 	endif 
@@ -56,7 +56,7 @@ Function HandlePlayerDeath()
 	actor[] enemies = osanative.sortactorsbydistance(playerref, PO3_SKSEFunctions.GetCombatTargets(playerref))
 	if (enemies.Length < 1)
 		ODefeatMain.KillPlayer()
-		Console("No enemies...")
+		Writelog("No enemies...")
 	endif 
 
 	if (ChanceRoll(odefeat.DefeatedAssaultChance))
@@ -82,13 +82,12 @@ Function HandlePlayerDeath()
 		EndWhile
 
 		ODefeatMain.KillPlayer()
-		Console("All enemies invalid, killing player")
+		Writelog("All enemies invalid, killing player")
 	else 
 		ODefeatMain.KillPlayer()
-		Console("No valid scene could be created, killing player as fallback.")
+		Writelog("No valid scene could be created, killing player as fallback.")
 	endif 
 EndFunction
-
 
 Function KnockdownAnimation()
 	if IsInFirstPerson()
@@ -97,3 +96,12 @@ Function KnockdownAnimation()
 		debug.SendAnimationEvent(playerref, "bleedOutStart")
 	endif 
 endfunction
+
+; This just makes life easier sometimes.
+Function WriteLog(String OutputLog, bool error = false)
+    MiscUtil.PrintConsole("ODefeat: " + OutputLog)
+    Debug.Trace("ODefeat: " + OutputLog)
+    if (error == true)
+        Debug.Notification("ODefeat: " + OutputLog)
+    endIF
+EndFunction

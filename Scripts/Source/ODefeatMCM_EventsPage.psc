@@ -29,9 +29,12 @@ Event OnPageDraw()
 
     AddHeaderOption(FONT_CUSTOM("Probabilities", pink))
     AddSliderOptionST("DefeatedAssaultChance_State", "Assault Chance", main.DefeatedAssaultChance)
-    AddSliderOptionST("DefeatedSkipChance_State", "Skip Assault Chance", main.DefeatedSkipChance) ;todo make this do something in main or player
+    ;AddSliderOptionST("DefeatedSkipChance_State", "Skip Assault Chance", main.DefeatedSkipChance) 
+    ;todo make this ^ do something in main or player
     AddSliderOptionST("MinValueToRob_State", "Minimum value to steal", main.MinValueToRob)
-
+    AddSliderOptionST("RobberyItemStealChance_State", "Item theft chance", main.RobberyItemStealChance)
+    
+    SetCursorPosition(1)
     AddHeaderOption(FONT_CUSTOM("After Death Events:", Blue))
     BuildPageContents()
 EndEvent
@@ -151,6 +154,25 @@ state MinValueToRob_State
 	
 	event OnSliderAcceptST(string state_id, float f)
 		main.MinValueToRob = f as int
+		SetSliderOptionValueST(f)
+	endevent
+endstate
+
+state RobberyItemStealChance_State
+	event OnDefaultST(string state_id)
+		main.RobberyItemStealChance = 50
+	endevent
+
+	event OnHighlightST(string state_id)
+		SetInfoText("Chance any valid individual item will be stolen, rolled for every valid item.")
+	endevent
+	
+	event OnSliderOpenST(string state_id)
+		SetSliderDialog(main.RobberyItemStealChance, 0, 100, 1.0, 50)
+	endevent
+	
+	event OnSliderAcceptST(string state_id, float f)
+		main.RobberyItemStealChance = f as int
 		SetSliderOptionValueST(f)
 	endevent
 endstate

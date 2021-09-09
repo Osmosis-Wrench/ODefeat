@@ -10,7 +10,7 @@
         <Variable Name="ModName" Value="ODefeat"/>
         <Variable Name="MyProject" Value="."/>
         <Variable Name="Dist" Value="..\dist"/>
-        <Variable Name="Ver" Value="0.6"/>
+        <Variable Name="Ver" Value="0.7"/>
     </Variables>
     <Imports>
         <Import>@MyProject/Scripts/Source</Import>

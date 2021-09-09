@@ -13,7 +13,7 @@ endEvent
 
 Event OnPageInit()
     SetModName("ODefeat")
-    SetLandingPage("Core Options")    
+    SetLandingPage("Core Options")
 endEvent
 
 Event OnUpdate()

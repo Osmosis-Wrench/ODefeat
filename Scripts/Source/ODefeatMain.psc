@@ -211,9 +211,9 @@ Event onKeyDown(int keyCode)
     endif
 
     if keyCode == 26
-        ;nothing
+        ;SendModEvent("oDefeat_robberyEvent")
     elseif keyCode == 27
-        DoCustomEvent()
+        ;DoCustomEvent()
     endif
 
     if !GameComplete 

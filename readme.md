@@ -1,4 +1,4 @@
 # ODefeat
-## __This is a very early version, and basically doesn't work yet.__
- __Do not download this unless you want to contribute to the code, it will 100% break your game.__  
- __I'll post about this project in ostim discord when it's ready.__
+## __Okay this is getting reasonably close to release now.__
+ __Do not download this unless you want to contribute finding bugs or adding new features/code, it will possibly break your game.__  
+Going to start working on a proper readme soon, but check back soon

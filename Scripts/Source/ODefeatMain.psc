@@ -142,6 +142,10 @@ Function startup()
     registerforkey(26)
     registerforkey(27)
 
+    perk RobPerk = GetFormFromFile(0x489f, "oDefeat.esp") as perk 
+    PlayerRef.RemovePerk(RobPerk)
+    PlayerRef.AddPerk(robperk)
+
     if ostim.GetAPIVersion() < 23 
         debug.MessageBox("Your OStim version is out of date. ODefeat requires a newer version")
         return 

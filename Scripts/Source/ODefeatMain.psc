@@ -393,8 +393,8 @@ bool Function Minigame(float difficulty, bool strip = true, bool struggle = true
                 attackStatus -= (GameCompletionsSinceLastCheck * attackPower) - difficulty
             endif
 
-            defeatBar.SetPercent(attackStatus / 100.0)
             GameCompletionsSinceLastCheck = 0
+            defeatBar.SetPercent(attackStatus / 100.0)
 
             if(!cheatMode)
                 difficultyCounter += 1

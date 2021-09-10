@@ -1,18 +1,18 @@
 {
     "ODefeat Robbery + Dumped Nearby Event": {
-      "Form": "__formData|ODefeat.esp|0x0012C4",
+      "Form": "__formData|ODefeat.esp|0x000801",
       "modEventName" : "oDefeat_robberyEvent",
       "Weighting": 0,
       "Description" : "You wake up nearby, missing some items over a certain value.\nThe items can be found on your attacker"
     },
     "ODefeat Dumped Nearby Event": {
-        "Form": "__formData|ODefeat.esp|0x0012C4",
+        "Form": "__formData|ODefeat.esp|0x000801",
         "modEventName" : "oDefeat_safeWakeupEvent",
         "Weighting": 20,
         "Description" : "You wake up nearby"
       },
     "ODefeat Execution Event": {
-        "Form": "__formData|ODefeat.esp|0x0012C4",
+        "Form": "__formData|ODefeat.esp|0x000801",
         "modEventName" : "oDefeat_killEvent",
         "Weighting": 0,
         "Description" : "You are executed by your attackers, and the last save is reloaded"

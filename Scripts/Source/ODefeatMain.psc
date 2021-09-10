@@ -107,7 +107,7 @@ Function onInit()
 EndFunction
 
 ODefeatMain Function GetODefeat() Global
-    return outils.GetFormFromFile(0x12c5, "odefeat.esp")  as ODefeatMain
+    return outils.GetFormFromFile(0x801, "odefeat.esp")  as ODefeatMain
 endfunction
 
 Function KillPlayer() Global
@@ -143,7 +143,7 @@ Function startup()
     registerforkey(26)
     registerforkey(27)
 
-    perk RobPerk = GetFormFromFile(0x489f, "oDefeat.esp") as perk 
+    perk RobPerk = GetFormFromFile(0x807, "oDefeat.esp") as perk 
     PlayerRef.RemovePerk(RobPerk)
     PlayerRef.AddPerk(robperk)
 

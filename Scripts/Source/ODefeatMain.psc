@@ -285,7 +285,7 @@ Function attemptAttack(Actor attacker, actor victim)
     float difficulty
 
     ; fire rape alert if ocrime installed
-    if OCrimeIntegration
+    if OCrimeIntegration && (!(victim.GetCrimeFaction() == none) || (victim == PlayerRef))
         int ocrime_event = ModEvent.Create("ocrime_crime")
         ModEvent.PushForm(ocrime_event, attacker)
         ModEvent.PushBool(ocrime_event, true)
@@ -977,6 +977,8 @@ Bool Function doTrauma(Actor target, bool enter = true) ; credit: sexlab defeat 
         RandomizeAngle(target) ;randomize laying pos.
 
         Debug.SendAnimationEvent(Target, "IdleWounded_02")
+
+        PreventActorDetection(target)
         Utility.Wait(1)
 
         if !Target.HasMagicEffect(ODefeatMagicEffect)       
@@ -1001,6 +1003,7 @@ Bool Function doTrauma(Actor target, bool enter = true) ; credit: sexlab defeat 
         return true
     else
        ; Debug.SendAnimationEvent(target, "DefeatTraumaExit")
+        ResetActorDetection(target)
         doCalm(Target, Enter = False)
         return true
     endif

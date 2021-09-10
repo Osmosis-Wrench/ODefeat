@@ -55,7 +55,7 @@ state EnablePlayerVictim_State
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("***Notice: once enabled, this setting cannot be disabled, and ODefeat cannot be uninstalled, or the player will become immortal.*** \nIf enabled, the player can be assaulted.")
+        SetInfoText("***Notice: once enabled, this setting cannot be disabled, and ODefeat cannot be uninstalled, or the player will become immortal.*** \nIf enabled, the player can be assaulted.\nFor reliablity, ODefeat will track and handle the player's life through Skyrim's deferred kill system from here on")
     endevent
 
     event OnDefaultST(string state_id)

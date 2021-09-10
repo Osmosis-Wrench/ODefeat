@@ -14,7 +14,10 @@ Event OnInit()
 EndEvent
 
 Event OnPlayerLoadGame()
-	RegisterForAnimationEvent(playerref, "JumpLandEnd")
+	if EnableVictim
+		RegisterForSingleUpdate(5.0)
+		RegisterForAnimationEvent(playerref, "JumpLandEnd")
+	endif 
 EndEvent
 
 Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
@@ -26,6 +29,19 @@ Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile,
 		playerref.DamageAV("health", 30.0)
 	endif 
 
+	CheckPlayerStatus()
+EndEvent
+
+Event OnUpdate()
+	CheckPlayerStatus()
+
+	if EnableVictim
+		RegisterForSingleUpdate(1.0)
+	endif 
+EndEvent
+
+
+Function CheckPlayerStatus()
 	float healthPercent = playerref.GetActorValuePercentage("health")
 	
 	if (healthPercent < 0.0) && OSANative.TryLock("mtx_od_deathhandle")
@@ -35,7 +51,7 @@ Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile,
 
 		osanative.Unlock("mtx_od_deathhandle")
 	endif 
-EndEvent
+EndFunction
 
 Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 	if !EnableVictim

@@ -6,6 +6,7 @@ ODefeatMain property main auto
 bool release = false
 String Blue = "#6699ff"
 String Pink = "#ff3389"
+String lightRed = "#FF7F7F"
 
 Event OnInit()
     RegisterModule("Core Options")
@@ -24,7 +25,7 @@ event OnPageDraw()
     SetCursorFillMode(TOP_TO_BOTTOM)
 
     AddHeaderOption(FONT_CUSTOM("Core Options", pink))
-    AddToggleOptionST("EnablePlayerVictim_State", "Enable Player as Victim", main.EnablePlayerVictim)
+    AddToggleOptionST("EnablePlayerVictim_State", FONT_CUSTOM("Enable Player as Victim", lightRed), main.EnablePlayerVictim)
     AddToggleOptionST("EnablePlayerAggressor_State", "Enable Player as Aggressor", main.EnablePlayerAggressor)
     AddToggleOptionST("MaleNPCsWontAssault_State", "Male NPCs as Aggressors", !main.MaleNPCsWontAssault)
     AddToggleOptionST("FemaleNPCsWontAssault_State", "Female NPCs as Aggressors", !main.femaleNPCsWontAssault)
@@ -33,10 +34,10 @@ event OnPageDraw()
     AddSliderOptionST("MinigameDifficultyModifier_State", "Minigame Difficulty Modifier", main.MinigameDifficultyModifier)
     AddSliderOptionST("MoralityToAssault_State", "Morality to Assault", main.MoralityToAssault)
     AddToggleOptionST("FollowersGetAssaulted_State", "Followers are Assaulted", main.FollowersGetAssaulted)
-    
+
     SetCursorPosition(1)
     AddHeaderOption(FONT_CUSTOM("Keybinds", pink))
-    AddKeyMapOptionST("startAttackKeyCode_State", "Start Assault Key", main.startAttackKeyCode)
+    AddKeyMapOptionST("startAttackKeyCode_State", "ODefeat Key", main.startAttackKeyCode)
     AddKeyMapOptionST("minigame0KeyCode_State", "Minigame Key Left", main.minigame0KeyCode)
     AddKeyMapOptionST("minigame1KeyCode_State", "Minigame Key Right", main.minigame1KeyCode)
     AddKeyMapOptionST("endAttackKeyCode_State", "End Assault Key", main.endAttackKeyCode)
@@ -54,7 +55,7 @@ state EnablePlayerVictim_State
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("If enabled, the player can be assaulted.")
+        SetInfoText("***Notice: once enabled, this setting cannot be disabled, and ODefeat cannot be uninstalled, or the player will become immortal.*** \nIf enabled, the player can be assaulted.")
     endevent
 
     event OnDefaultST(string state_id)
@@ -70,7 +71,7 @@ state EnablePlayerAggressor_State
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("If enabled, the player can perform assaults.")
+        SetInfoText("If enabled, the player can assault NPCs")
     endevent
 
     event OnDefaultST(string state_id)
@@ -156,7 +157,7 @@ state FollowersGetAssaulted_State
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("If enabled, the player can perform assaults.")
+        SetInfoText("If enabled, followers will be assaulted when the player is. Otherwise they will stand nearby.")
     endevent
 
     event OnDefaultST(string state_id)
@@ -172,7 +173,7 @@ state startAttackKeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The key to start a struggle mingame.")
+		SetInfoText("On an NPC: perform a takedown and start a struggle minigame\nOn a knocked-out npc: start an OStim scene with them\nWhile the player is being assaulted: try to break free\nOn a dead NPC: strip their clothes")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -220,7 +221,7 @@ state endAttackKeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The key to end a struggle minigame.")
+		SetInfoText("The key to give up during a struggle minigame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)

@@ -1,20 +1,20 @@
 {
-    "ODefeat Robbery Event": {
+    "ODefeat Robbery + Dumped Nearby Event": {
       "Form": "__formData|ODefeat.esp|0x0012C4",
       "modEventName" : "oDefeat_robberyEvent",
-      "Weighting": 50,
-      "Description" : "You wakeup nearby to your defeat location, missing items over a certain value."
+      "Weighting": 0,
+      "Description" : "You wake up nearby, missing some items over a certain value.\nThe items can be found on your attacker"
     },
-    "ODefeat Safe Wakeup Event": {
+    "ODefeat Dumped Nearby Event": {
         "Form": "__formData|ODefeat.esp|0x0012C4",
         "modEventName" : "oDefeat_safeWakeupEvent",
-        "Weighting": 50,
-        "Description" : "You wakeup nearby to your defeat location."
+        "Weighting": 20,
+        "Description" : "You wake up nearby"
       },
-    "ODefeat Player Death Event": {
+    "ODefeat Execution Event": {
         "Form": "__formData|ODefeat.esp|0x0012C4",
         "modEventName" : "oDefeat_killEvent",
         "Weighting": 0,
-        "Description" : "After an defeat, you straight up fucking die."
+        "Description" : "You are executed by your attackers, and the last save is reloaded"
       }
   }

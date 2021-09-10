@@ -24,18 +24,19 @@ EndEvent
 
 Event OnPageDraw()
     SetCursorFillMode(TOP_TO_BOTTOM)
+    AddTextOptionST("info_state", "Information", "Click")
     AddHeaderOption(FONT_CUSTOM("Event Controls:", Blue))
     AddTextOptionST("rebuild_database_state", "Rebuild Database", "Click")
 
-    AddHeaderOption(FONT_CUSTOM("Probabilities", pink))
-    AddSliderOptionST("DefeatedAssaultChance_State", "Assault Chance", main.DefeatedAssaultChance)
+    AddHeaderOption(FONT_CUSTOM("Built-in Defeat Event Probabilities", pink))
+    AddSliderOptionST("DefeatedAssaultChance_State", "Assault Chance", main.DefeatedAssaultChance) ; move to main as well?
     ;AddSliderOptionST("DefeatedSkipChance_State", "Skip Assault Chance", main.DefeatedSkipChance) 
     ;todo make this ^ do something in main or player
     AddSliderOptionST("MinValueToRob_State", "Minimum value to steal", main.MinValueToRob)
     AddSliderOptionST("RobberyItemStealChance_State", "Item theft chance", main.RobberyItemStealChance)
     
     SetCursorPosition(1)
-    AddHeaderOption(FONT_CUSTOM("After Death Events:", Blue))
+    AddHeaderOption(FONT_CUSTOM("Post-defeat Events:", Blue))
     BuildPageContents()
 EndEvent
 
@@ -48,6 +49,20 @@ function BuildPageContents()
     endwhile
 endFunction
 
+state info_state
+    event OnSelectST(string state_id)
+        debug.messagebox("These are modular events that occur after losing a player-victim struggle" + \
+            "\n\nThey will occur after the sex scene, if a sex scene takes place (the chance of a sex scene is configurable), or right after losing to your enemies if no OStim scene occurs" + \
+            "\n\nThe right numbers are the weights of it occuring, if event B has a weight of 20 and event A has a weight of 1 and we run 21 victim scenes, A will be selected on average 1 of the 20. 0 is disabled." + \
+            "\n\nThis page does nothing if player victim is disabled" + \
+            "\n\nMod authors can add new events to this page")
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("Click for information about this page")
+    endevent
+endState
+
 state rebuild_database_state
     event OnSelectST(string state_id)
         BuildDatabase()
@@ -55,7 +70,7 @@ state rebuild_database_state
     endevent
 
     event OnHighlightST(string state_id)
-        SetInfoText("Rebuilds the event database. /n This will purge invalid events, load new events and reset weighting to default.")
+        SetInfoText("Rebuilds the event database. \n This will purge invalid events, load new events and reset weighting to default.")
     endevent
 endState
 
@@ -145,7 +160,7 @@ state MinValueToRob_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("Any item over this value can be stolen.")
+		SetInfoText("During a robbery event, items over this value may be stolen")
 	endevent
 	
 	event OnSliderOpenST(string state_id)
@@ -164,7 +179,7 @@ state RobberyItemStealChance_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("Chance any valid individual item will be stolen, rolled for every valid item.")
+		SetInfoText("Chance any valid individual item will be stolen during a robbery event, rolled for every valid item.")
 	endevent
 	
 	event OnSliderOpenST(string state_id)

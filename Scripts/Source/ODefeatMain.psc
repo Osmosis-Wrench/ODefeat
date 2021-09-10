@@ -37,9 +37,11 @@ bool Property EnablePlayerVictim
             PlayerRef.StartDeferredKill()
             (GetNthAlias(0) as ODefeatPlayer).EnableVictim = true
         else 
-            PlayerRef.RestoreActorValue("health", 25.0)
-            PlayerRef.EndDeferredKill()
-            (GetNthAlias(0) as ODefeatPlayer).EnableVictim = false
+            if EnablePlayerVictim
+                Debug.MessageBox("Disabling this requires a new game.")
+            else    
+                (GetNthAlias(0) as ODefeatPlayer).EnableVictim = false
+            endif 
         endif 
     EndFunction
 EndProperty

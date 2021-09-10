@@ -123,12 +123,11 @@ Function startup()
     attackStatus = 0 
     GameComplete = true ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
-    DefeatSexChance = 100
-    RobberyItemStealChance = 50
+
 
     defeatBar = (Self as Quest) as Osexbar
 
-    MinigameDifficultyModifier = 0.0
+
     
     OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 
@@ -190,14 +189,18 @@ Event OnGameLoad()
     RegisterForModEvent("oDefeat_robberyEvent", "robberyEvent")
     RegisterForModEvent("oDefeat_safeWakeupEvent", "safeWakeupEvent")
     RegisterForModEvent("oDefeat_killEvent", "killEvent")
+
+
 EndEvent
 
 Function SetDefaultSettings()
-    EnablePlayerVictim = false
+    if !EnablePlayerVictim
+        EnablePlayerVictim = false
+    endif 
     EnablePlayerAggressor = true
 
     MaleNPCsWontAssault = false 
-    FemaleNPCsWontAssault = false 
+    FemaleNPCsWontAssault = true 
 
     MinValueToRob = 350
 
@@ -210,6 +213,10 @@ Function SetDefaultSettings()
     DefeatedSkipChance = 0
     MoralityToAssault = 1
     FollowersGetAssaulted = true
+
+        DefeatSexChance = 100
+    RobberyItemStealChance = 50
+    MinigameDifficultyModifier = 0.0
 endfunction 
 
 Event onKeyDown(int keyCode)
@@ -320,6 +327,12 @@ Function attemptAttack(Actor attacker, actor victim)
 
             RestorePlayerState()
             UnregisterForAnimationEvent(PlayerRef, "GetUpEnd")
+            if !tNPCVictory && ostim.ShowTutorials
+                tNPCVictory = true 
+
+                ostim.DisplayToastAsync("You defeated the NPC", 2.5)
+                ostim.DisplayToastAsync("Press G on them while they are down to start an OStim scene", 7.0)
+            endif 
         else ; player is Defeated
             attacker.SetDontMove(true)
 
@@ -343,6 +356,11 @@ Function attemptAttack(Actor attacker, actor victim)
             victim.StartCombat(attacker)
 			victim.DrawWeapon()
 
+            if !tNPCFail && ostim.ShowTutorials
+                tNPCFail = true
+                Utility.Wait(6.0)
+                ostim.DisplayToastAsync("Lower your enemy's health for better odds", 5.0)
+            endif 
         else ; player escaped alive
             playerref.RestoreActorValue("health", (playerref.GetBaseActorValue("health") / 2.0) +  (math.abs( PlayerRef.GetActorValue("health") )))
             PlayerRef.SetDontMove(false)
@@ -361,7 +379,15 @@ Function attemptAttack(Actor attacker, actor victim)
     attackRunning = false
 EndFunction
 
+bool tNPCFail
+bool tNPCVictory
+bool tMinigame
 bool Function Minigame(float difficulty, bool strip = true, bool struggle = true)
+    if !tminigame && ostim.showtutorials
+        tminigame = true 
+
+        ostim.DisplayToastAsync("Alternate between pressing Left-Shift and Right-Shift rapidly", 6.0)
+    endif 
     if struggle
         RunStruggleAnim(AttackingActor, VictimActor) 
     endif 
@@ -731,6 +757,8 @@ location Function CellToLocation(cell c)
     return c.GetNthRef(0).GetCurrentLocation()
 EndFunction
 
+bool tEscape
+
 Function PlayerDefenseFailedEvent(actor aggressor) 
     runStruggleAnim(aggressor, PlayerRef, false, false)
 
@@ -826,6 +854,15 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
     ostim.FadeFromBlack()
 
+    if !tEscape && ostim.ShowTutorials
+            tescape = true 
+            SetUIVisible(true)
+            Utility.Wait(2.5)
+            DisplayToastText("Press G to attempt an escape", 3.0)
+            DisplayToastText("Full stamina is required to attempt", 3.0)
+            SetUIVisible(false)
+    endif 
+
     Utility.Wait(3)
     ostim.UseFades = bUseFades
     ostim.UseAutoFades = bAutoFades
@@ -859,6 +896,7 @@ Function StartScene(actor Dom, actor Sub)
 
     if !npcScene
         Ostim.StartScene(dom, sub, Aggressive = True, AggressingActor = dom)
+
     else 
         ostim.GetUnusedSubthread().StartScene(dom, sub, isaggressive = true, aggressingActor = dom, LinkToMain = true)
     endif 
@@ -1093,7 +1131,6 @@ Function stripItem(actor target, form item, bool doImpulse = true)
 endFunction
 
 bool wasRobbed
-
 Function RobPlayer(actor robber)
     wasRobbed = true 
     form[] playerInv = AddAllItemsToArray(playerref,false, false, true)
@@ -1209,10 +1246,20 @@ Function CustomEvent_Notify(string eventName)
     endif
 endFunction
 
+bool tRobbed
+
 event robberyEvent(string eventName, string arg_s, float argNum, form sender)
     writelog(1)
     RobPlayer(ostim.GetAggressiveActor())
     MoveToSafeSpot()
+
+    if !tRobbed && ostim.ShowTutorials
+        Utility.Wait(3)
+        tRobbed = true 
+
+        ostim.DisplayToastAsync("You were robbed of some valuables", 3.5)
+        ostim.DisplayToastAsync("Your items are in your attacker's inventory", 5.0)
+    endif 
 endEvent
 
 event safeWakeupEvent(string eventName, string arg_s, float argNum, form sender)

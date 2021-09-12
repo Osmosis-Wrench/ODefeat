@@ -91,7 +91,7 @@ State event_slider_state
 EndState
 
 Function BuildDatabase()
-    int eventFilelist = JValue.readFromDirectory("Data/meshes/ODefeatData/", ".json")
+    int eventFilelist = JValue.readFromDirectory("Data/meshes/ODefeatData/events", ".json")
     JValue.Retain(eventFilelist) 
     ; the retain and release are probably unnessesary, but just in case somebody wants to load like 100+ events this should still be fine.
     int eventData

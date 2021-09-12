@@ -18,6 +18,15 @@ MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
 
+int property oDefeatScanCodes
+    int function get()
+        return JDB.solveObj(".ODefeat.scancodes")
+    EndFunction
+    function set(int object)
+        JDB.solveObjSetter(".ODefeat.scancodes", object, true)
+    endfunction
+endProperty
+
 int property oDefeatEventsJDB
     int function get()
         return JDB.solveObj(".ODefeat.events")
@@ -127,8 +136,6 @@ Function startup()
 
     defeatBar = (Self as Quest) as Osexbar
 
-
-    
     OCrimeIntegration = OUtils.IsModLoaded("ocrime.esp")
 
     droppedItems = PapyrusUtil.ObjRefArray(6, none)
@@ -163,6 +170,11 @@ Function startup()
         return
     endif 
 
+    if !loadScanCodes()
+        Debug.MessageBox("Scancode.json not detected. Please re-install ODefeat.")
+        return
+    endif
+
     SetDefaultSettings()
 
     OnGameLoad()
@@ -170,6 +182,20 @@ Function startup()
     Debug.notification("ODefeat installed")
 EndFunction
 
+bool function loadScanCodes()
+    if !MiscUtil.FileExists("data/meshes/ODefeatData/scanCodes/scancode.json")
+        return False
+    Else
+        int data = JValue.readFromFile("data/meshes/ODefeatData/scanCodes/scancode.json")
+        oDefeatScanCodes = data
+        writelog(JMap.GetStr(oDefeatScanCodes, "26"))
+    endif
+    return true
+endFunction
+
+string function getSC(int keycode)
+    return "["+JMap.GetStr(oDefeatScanCodes, keycode)+"]"
+endFunction
 
 Event OnGameLoad()
     if !OSANative.DetectionActive()
@@ -189,7 +215,6 @@ Event OnGameLoad()
     RegisterForModEvent("oDefeat_robberyEvent", "robberyEvent")
     RegisterForModEvent("oDefeat_safeWakeupEvent", "safeWakeupEvent")
     RegisterForModEvent("oDefeat_killEvent", "killEvent")
-
 
 EndEvent
 
@@ -226,8 +251,10 @@ Event onKeyDown(int keyCode)
 
     if keyCode == 26
         ;SendModEvent("oDefeat_robberyEvent")
+        
     elseif keyCode == 27
         ;DoCustomEvent()
+        ostim.DisplayToastAsync("Alternate between pressing "+getSC(minigame0KeyCode)+" and "+getSC(minigame1KeyCode), 6.0)
     endif
 
     if !GameComplete 
@@ -386,7 +413,7 @@ bool Function Minigame(float difficulty, bool strip = true, bool struggle = true
     if !tminigame && ostim.showtutorials
         tminigame = true 
 
-        ostim.DisplayToastAsync("Alternate between pressing Left-Shift and Right-Shift rapidly", 6.0)
+        ostim.DisplayToastAsync("Alternate between pressing [jump] Left-Shift and Right-Shift rapidly", 6.0)
     endif 
     if struggle
         RunStruggleAnim(AttackingActor, VictimActor) 
@@ -1386,3 +1413,7 @@ state StrippedArmor
     function GotoNextState()
     endFunction
 endState
+
+function getButtonName(int keycode)
+
+endfunction

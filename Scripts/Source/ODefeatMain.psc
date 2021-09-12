@@ -18,14 +18,7 @@ MagicEffect property ODefeatMagicEffect auto
 
 ObjectReference Property posref Auto
 
-int property oDefeatScanCodes
-    int function get()
-        return JDB.solveObj(".ODefeat.scancodes")
-    EndFunction
-    function set(int object)
-        JDB.solveObjSetter(".ODefeat.scancodes", object, true)
-    endfunction
-endProperty
+
 
 int property oDefeatEventsJDB
     int function get()
@@ -170,10 +163,7 @@ Function startup()
         return
     endif 
 
-    if !loadScanCodes()
-        Debug.MessageBox("Scancode.json not detected. Please re-install ODefeat.")
-        return
-    endif
+
 
     SetDefaultSettings()
 
@@ -182,20 +172,7 @@ Function startup()
     Debug.notification("ODefeat installed")
 EndFunction
 
-bool function loadScanCodes()
-    if !MiscUtil.FileExists("data/meshes/ODefeatData/scanCodes/scancode.json")
-        return False
-    Else
-        int data = JValue.readFromFile("data/meshes/ODefeatData/scanCodes/scancode.json")
-        oDefeatScanCodes = data
-        writelog(JMap.GetStr(oDefeatScanCodes, "26"))
-    endif
-    return true
-endFunction
 
-string function getSC(int keycode)
-    return "["+JMap.GetStr(oDefeatScanCodes, keycode)+"]"
-endFunction
 
 Event OnGameLoad()
     if !OSANative.DetectionActive()
@@ -247,14 +224,6 @@ endfunction
 Event onKeyDown(int keyCode)
     if MenuOpen()
         return
-    endif
-
-    if keyCode == 26
-        ;SendModEvent("oDefeat_robberyEvent")
-        
-    elseif keyCode == 27
-        ;DoCustomEvent()
-        ostim.DisplayToastAsync("Alternate between pressing "+getSC(minigame0KeyCode)+" and "+getSC(minigame1KeyCode), 6.0)
     endif
 
     if !GameComplete 
@@ -358,7 +327,7 @@ Function attemptAttack(Actor attacker, actor victim)
                 tNPCVictory = true 
 
                 ostim.DisplayToastAsync("You defeated the NPC", 2.5)
-                ostim.DisplayToastAsync("Press G on them while they are down to start an OStim scene", 7.0)
+                ostim.DisplayToastAsync("Press " + GetButtontag(startAttackKeyCode) + " on them while they are down to start an OStim scene", 7.0)
             endif 
         else ; player is Defeated
             attacker.SetDontMove(true)
@@ -387,6 +356,8 @@ Function attemptAttack(Actor attacker, actor victim)
                 tNPCFail = true
                 Utility.Wait(6.0)
                 ostim.DisplayToastAsync("Lower your enemy's health for better odds", 5.0)
+                ostim.DisplayToastAsync("Press " + GetButtontag(endAttackKeyCode) + " to give up early during a struggle", 3.0)
+
             endif 
         else ; player escaped alive
             playerref.RestoreActorValue("health", (playerref.GetBaseActorValue("health") / 2.0) +  (math.abs( PlayerRef.GetActorValue("health") )))
@@ -413,7 +384,7 @@ bool Function Minigame(float difficulty, bool strip = true, bool struggle = true
     if !tminigame && ostim.showtutorials
         tminigame = true 
 
-        ostim.DisplayToastAsync("Alternate between pressing [jump] Left-Shift and Right-Shift rapidly", 6.0)
+        ostim.DisplayToastAsync("Alternate between pressing " + GetButtontag(minigame0KeyCode) + " and " + GetButtontag(minigame1KeyCode) + " rapidly", 6.0)
     endif 
     if struggle
         RunStruggleAnim(AttackingActor, VictimActor) 
@@ -1179,7 +1150,7 @@ EndFunction
 
 Float Function getActorAttackDifficulty(actor target)
     ; Return a float of the Difficulty of the attack minigame, based off the actor pased in.    
-    ; Dificulty is clamped between 10 and 5 
+    ; Dificulty is clamped between 10 and 4
     if cheatMode 
         return 0
     endif 
@@ -1211,9 +1182,8 @@ Float Function getActorAttackDifficulty(actor target)
     if target.GetSleepState() == 3
 		ret -= 1
 	endif
-    if (ret < 5.0)
-        ret = 5.0
-    endif
+    ret = PapyrusUtil.ClampFloat(ret, 4.0, 10.0)
+
     return ret + MinigameDifficultyModifier
 endFunction
 

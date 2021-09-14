@@ -856,7 +856,7 @@ Function PlayerDefenseFailedEvent(actor aggressor)
             tescape = true 
             SetUIVisible(true)
             Utility.Wait(2.5)
-            DisplayToastText("Press G to attempt an escape", 3.0)
+            DisplayToastText("Press " + GetButtontag(startAttackKeyCode) + " to attempt an escape", 3.0)
             DisplayToastText("Full stamina is required to attempt", 3.0)
             SetUIVisible(false)
     endif 

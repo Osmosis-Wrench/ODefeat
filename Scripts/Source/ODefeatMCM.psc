@@ -3,7 +3,7 @@ Scriptname ODefeatMCM extends nl_mcm_module
 ODefeatMain property main auto
 
 ; dev stuff
-bool release = false
+bool release = true
 String Blue = "#6699ff"
 String Pink = "#ff3389"
 String lightRed = "#FF7F7F"

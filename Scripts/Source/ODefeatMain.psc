@@ -90,7 +90,6 @@ int property endAttackKeyCode auto
 int property DefeatedAssaultChance auto
 int property DefeatedSkipChance auto
 int property MoralityToAssault auto
-int property DefeatSexChance auto ;mcm todo
 bool property FollowersGetAssaulted auto
 
 
@@ -215,7 +214,6 @@ Function SetDefaultSettings()
     MoralityToAssault = 1
     FollowersGetAssaulted = true
 
-    DefeatSexChance = 100
     RobberyItemStealChance = 50
     MinigameDifficultyModifier = 0.0
 endfunction 
@@ -761,7 +759,7 @@ Function PlayerDefenseFailedEvent(actor aggressor)
 
     ostim.FadeToBlack()
 
-    if !ChanceRoll(DefeatSexChance)
+    if ChanceRoll(DefeatedSkipChance)
         PunishPlayer()
         return 
     endif 

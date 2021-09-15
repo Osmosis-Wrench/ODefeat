@@ -30,8 +30,6 @@ Event OnPageDraw()
 
     AddHeaderOption(FONT_CUSTOM("Built-in Defeat Event Probabilities", pink))
     AddSliderOptionST("DefeatedAssaultChance_State", "Assault Chance", main.DefeatedAssaultChance) ; move to main as well?
-    ;AddSliderOptionST("DefeatedSkipChance_State", "Skip Assault Chance", main.DefeatedSkipChance) 
-    ;todo make this ^ do something in main or player
     AddSliderOptionST("MinValueToRob_State", "Minimum value to steal", main.MinValueToRob)
     AddSliderOptionST("RobberyItemStealChance_State", "Item theft chance", main.RobberyItemStealChance)
     

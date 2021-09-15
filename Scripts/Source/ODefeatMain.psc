@@ -80,7 +80,7 @@ bool OCrimeIntegration
 
 int warmupTime
 
-bool Property cheatMode = false auto ;TODO - disable for release
+bool Property cheatMode = false auto 
 
 int property startAttackKeyCode auto
 int property minigame0KeyCode auto
@@ -90,11 +90,10 @@ int property endAttackKeyCode auto
 int property DefeatedAssaultChance auto
 int property DefeatedSkipChance auto
 int property MoralityToAssault auto
-int property DefeatSexChance auto
+int property DefeatSexChance auto ;mcm todo
 bool property FollowersGetAssaulted auto
 
-;todo fix death animation glitch
-;todo add follower options
+
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
 ; ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝
@@ -216,7 +215,7 @@ Function SetDefaultSettings()
     MoralityToAssault = 1
     FollowersGetAssaulted = true
 
-        DefeatSexChance = 100
+    DefeatSexChance = 100
     RobberyItemStealChance = 50
     MinigameDifficultyModifier = 0.0
 endfunction 

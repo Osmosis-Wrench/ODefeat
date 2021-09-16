@@ -145,7 +145,7 @@ Function startup()
     PlayerRef.RemovePerk(RobPerk)
     PlayerRef.AddPerk(robperk)
 
-    if ostim.GetAPIVersion() < 23 
+    if ostim.GetAPIVersion() < 24
         debug.MessageBox("Your OStim version is out of date. ODefeat requires a newer version")
         return 
 

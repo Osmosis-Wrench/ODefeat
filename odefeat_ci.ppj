@@ -37,8 +37,9 @@
         <ZipFile Name="@ModName - @Ver" RootDir="@MyProject" Compression="deflate">
             <Include>ODefeat.esp</Include>
             <Include>scripts</Include>
-            <Include>meshes</Include>
-            <Include>ODefeatData</Include>
+            <Include>*.hkx</Include>
+            <Include>*.txt</Include>
+            <Include>oDefeatNativeEvents.json</Include>
         </ZipFile>
     </ZipFiles>
 </PapyrusProject>

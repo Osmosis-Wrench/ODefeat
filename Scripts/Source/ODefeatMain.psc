@@ -557,10 +557,10 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
 
             CenterLocation[2] = CenterLocation[2] + 33
         else 
-            if victim == PlayerRef
+            ;if victim == PlayerRef
                 terrainMagnetOffset = 5.0
                 terrainMagnetOffsetHeight = -5.0
-            endif
+            ;endif
         endif 
 
         if (Attacker == PlayerRef) ; place and align attacker

@@ -173,7 +173,7 @@ state startAttackKeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("On an NPC: perform a takedown and start a struggle minigame\nOn a knocked-out npc: start an OStim scene with them\nWhile the player is being assaulted: try to break free\nOn a dead NPC: strip their clothes")
+		SetInfoText("On an NPC: perform a takedown and start a struggle minigame\nOn a knocked-out npc: start an OStim scene with them\nWhile the player is being assaulted: try to break free\nOn a dead NPC: strip their clothes\nSave and reload the game to take effect")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -189,7 +189,7 @@ state minigame0KeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The left key for the struggle minigame.")
+		SetInfoText("The left key for the struggle minigame.\nSave and reload the game to take effect")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -205,7 +205,7 @@ state minigame1KeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The right key for the struggle minigame.")
+		SetInfoText("The right key for the struggle minigame.\nSave and reload the game to take effect")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
@@ -221,7 +221,7 @@ state endAttackKeyCode_State
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The key to give up during a struggle minigame.")
+		SetInfoText("The key to give up during a struggle minigame.\nSave and reload the game to take effect")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)

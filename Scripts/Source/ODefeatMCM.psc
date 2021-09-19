@@ -168,65 +168,81 @@ endState
 
 state startAttackKeyCode_State
 	event OnDefaultST(string state_id)
+        int old = main.startAttackKeyCode
         main.StartAttackKeyCode = 34
         SetKeyMapOptionValueST(34)
+        main.remap(old, main.startAttackKeyCode)
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("On an NPC: perform a takedown and start a struggle minigame\nOn a knocked-out npc: start an OStim scene with them\nWhile the player is being assaulted: try to break free\nOn a dead NPC: strip their clothes\nSave and reload the game to take effect")
+		SetInfoText("On an NPC: perform a takedown and start a struggle minigame\nOn a knocked-out npc: start an OStim scene with them\nWhile the player is being assaulted: try to break free\nOn a dead NPC: strip their clothes.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
+        int old = main.startAttackKeyCode
 		main.StartAttackKeyCode = keycode
 		SetKeyMapOptionValueST(keycode)
+        main.remap(old, main.startAttackKeyCode)
 	endevent
 endstate
 
 state minigame0KeyCode_State
 	event OnDefaultST(string state_id)
+        int old = main.minigame0KeyCode
         main.minigame0KeyCode = 42
         SetKeyMapOptionValueST(42)
+        main.remap(old, main.minigame0KeyCode)
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The left key for the struggle minigame.\nSave and reload the game to take effect")
+		SetInfoText("The left key for the struggle minigame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
+        int old = main.minigame0KeyCode
 		main.minigame0KeyCode = keycode
 		SetKeyMapOptionValueST(keycode)
+        main.remap(old, main.minigame0KeyCode)
 	endevent
 endstate
 
 state minigame1KeyCode_State
 	event OnDefaultST(string state_id)
-        main.minigame0KeyCode = 54
+        int old = main.minigame1KeyCode
+        main.minigame1KeyCode = 54
         SetKeyMapOptionValueST(54)
+        main.remap(old, main.minigame1KeyCode)
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The right key for the struggle minigame.\nSave and reload the game to take effect")
+		SetInfoText("The right key for the struggle minigame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
+        int old = main.minigame1KeyCode
 		main.minigame1KeyCode = keycode
 		SetKeyMapOptionValueST(keycode)
+        main.remap(old, main.minigame1KeyCode)
 	endevent
 endstate
 
 state endAttackKeyCode_State
 	event OnDefaultST(string state_id)
+        int old = main.endAttackKeyCode
         main.endAttackKeyCode = 57
         SetKeyMapOptionValueST(57)
+        main.remap(old, main.endAttackKeyCode)
 	endevent
 
 	event OnHighlightST(string state_id)
-		SetInfoText("The key to give up during a struggle minigame.\nSave and reload the game to take effect")
+		SetInfoText("The key to give up during a struggle minigame.")
 	endevent
 
 	event OnKeyMapChangeST(string state_id, int keycode)
+        int old = main.endAttackKeyCode
 		main.endAttackKeyCode = keycode
 		SetKeyMapOptionValueST(keycode)
+        main.remap(old, main.endAttackKeyCode)
 	endevent
 endstate
 

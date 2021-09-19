@@ -146,22 +146,20 @@ Function startup()
     PlayerRef.AddPerk(robperk)
 
     if ostim.GetAPIVersion() < 24
-        debug.MessageBox("Your OStim version is out of date. ODefeat requires a newer version")
+        debug.MessageBox("ODEFEAT: Your OStim version is out of date. ODefeat requires a newer version")
         return 
 
     endif 
 
     if (CanActorBeDetected(PlayerRef) == 0 )
-        debug.MessageBox("po3's papyrus extender is out of date or not installed. please update")
+        debug.MessageBox("ODEFEAT: po3's papyrus extender is out of date or not installed. please update")
         return
     endif 
 
-    if !MiscUtil.FileExists("data/scripts/nl_mcm.pex")
-        Debug.MessageBox("NL_MCM is not installed. Please install it to use ODefeat")
+    if !(nl_mcm_globalinfo.CurrentVersion() >= 103)
+        Debug.MessageBox("ODEFEAT: The latest version of NL_MCM is not installed, update it to use ODefeat.")
         return
-    endif 
-
-
+    endif
 
     SetDefaultSettings()
 
@@ -1274,6 +1272,11 @@ Function WriteLog(String OutputLog, bool error = false)
         Debug.Notification("ODefeat: " + OutputLog)
     endIF
 EndFunction
+
+Function remap(int oldkey, int newkey)
+    UnRegisterForKey(oldkey)
+    RegisterForKey(newkey)
+endFunction
 
 ;; Base State
 function GotoNextState()    

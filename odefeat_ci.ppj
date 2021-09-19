@@ -10,7 +10,7 @@
         <Variable Name="ModName" Value="ODefeat"/>
         <Variable Name="MyProject" Value="."/>
         <Variable Name="Dist" Value="..\dist"/>
-        <Variable Name="Ver" Value="1.0"/>
+        <Variable Name="Ver" Value="1.1"/>
     </Variables>
     <Imports>
         <Import>@MyProject/Scripts/Source</Import>
@@ -37,9 +37,7 @@
         <ZipFile Name="@ModName - @Ver" RootDir="@MyProject" Compression="deflate">
             <Include>ODefeat.esp</Include>
             <Include>scripts</Include>
-            <Include>*.hkx</Include>
-            <Include>*.txt</Include>
-            <Include>oDefeatNativeEvents.json</Include>
+            <Include>meshes</Include>
         </ZipFile>
     </ZipFiles>
 </PapyrusProject>

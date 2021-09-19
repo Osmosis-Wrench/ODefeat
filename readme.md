@@ -6,10 +6,10 @@ Adds defeat mechanics to the game.
 
 ## Requirements
 
-[OStim](https://www.nexusmods.com/skyrimspecialedition/mods/40725)
-[PO3 Papyrus Extender](https://www.nexusmods.com/skyrimspecialedition/mods/22854)
-[NL_MCM](https://www.nexusmods.com/skyrimspecialedition/mods/49127)
-[Nemesis or FNIS](https://github.com/ShikyoKira/Project-New-Reign---Nemesis-Main/releases)
+* [OStim](https://www.nexusmods.com/skyrimspecialedition/mods/40725)
+* [PO3 Papyrus Extender](https://www.nexusmods.com/skyrimspecialedition/mods/22854)
+* [NL_MCM](https://www.nexusmods.com/skyrimspecialedition/mods/49127)
+* [Nemesis or FNIS](https://github.com/ShikyoKira/Project-New-Reign---Nemesis-Main/releases)
 
 ## Contributing
 

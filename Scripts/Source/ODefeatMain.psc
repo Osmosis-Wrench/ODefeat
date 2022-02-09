@@ -49,7 +49,7 @@ bool Property EnablePlayerVictim
 EndProperty
 
 bool Property EnablePlayerAggressor auto
-
+bool Property EnableStruggle auto
 
 bool property MaleNPCsWontAssault auto
 bool property FemaleNPCsWontAssault auto
@@ -91,7 +91,11 @@ int property DefeatedAssaultChance auto
 int property DefeatedSkipChance auto
 int property MoralityToAssault auto
 bool property FollowersGetAssaulted auto
+bool property AllowOldPeopleRace auto
+bool property FollowersGetDismissed auto
 
+Quest Property DialogueFollower Auto
+DialogueFollowerScript DialogueFollowerScriptQuest
 
 
 ;  ██████╗ ██████╗ ███████╗███████╗███████╗ █████╗ ████████╗
@@ -124,6 +128,7 @@ Function startup()
     GameComplete = true ; Attack has finshed completely.
     attackRunning = False ; Attack is in progress.
 
+    DialogueFollowerScriptQuest = DialogueFollower as DialogueFollowerScript
 
     defeatBar = (Self as Quest) as Osexbar
 
@@ -196,6 +201,7 @@ Function SetDefaultSettings()
         EnablePlayerVictim = false
     endif 
     EnablePlayerAggressor = true
+    EnableStruggle = true
 
     MaleNPCsWontAssault = false 
     FemaleNPCsWontAssault = true 
@@ -211,6 +217,8 @@ Function SetDefaultSettings()
     DefeatedSkipChance = 0
     MoralityToAssault = 1
     FollowersGetAssaulted = true
+    AllowOldPeopleRace = true
+    FollowersGetDismissed = false
 
     RobberyItemStealChance = 50
     MinigameDifficultyModifier = 0.0
@@ -300,7 +308,6 @@ Function attemptAttack(Actor attacker, actor victim)
         defeatBar.setPercent(0.80)
         AttackStatus = 80.0
         PlayerRef.SetDontMove(True)
-        
         OSANative.SendEvent(self, "FastDisableCombat")
     EndIf
 
@@ -516,8 +523,6 @@ Function runStruggleAnim(Actor attacker, actor victim, bool animate = true, bool
     ; Run struggle animation.
     if (animate)
         wasInFirstPerson = IsInFirstPerson()
-
-
 
         struggleActorPreventMove(attacker, true)
         struggleActorPreventMove(victim, true)
@@ -752,8 +757,12 @@ EndFunction
 
 bool tEscape
 
-Function PlayerDefenseFailedEvent(actor aggressor) 
-    runStruggleAnim(aggressor, PlayerRef, false, false)
+Function PlayerDefenseFailedEvent(actor aggressor)
+    PlayerRef.SetDontMove(True)
+    OSANative.SendEvent(self, "FastDisableCombat")
+    if !EnableStruggle
+        runStruggleAnim(aggressor, PlayerRef, false, false)
+    endif
 
     ostim.FadeToBlack()
 
@@ -773,7 +782,6 @@ Function PlayerDefenseFailedEvent(actor aggressor)
     startscene(aggressor, playerref)
 
     actor[] followers = lastKnownAllies
-   
 
     if (FollowersGetAssaulted && followers.Length > 0)
         Writelog("Player has followers & follower assault enabled")
@@ -838,7 +846,18 @@ Function PlayerDefenseFailedEvent(actor aggressor)
         endwhile
     else 
         Writelog("Player has no followers")
-    endif 
+    endif
+
+    if (FollowersGetDismissed && followers.Length > 0)
+        Writelog("Dismiss followers.")
+        int i = 0
+        int l = followers.Length
+        while i < l
+            followers[i].DispelSpell(ODefeatSpell)
+            i += 1
+        endwhile
+        DialogueFollowerScriptQuest.DismissFollower()
+    endif
 
     Utility.Wait(0.5)
     while (!ostim.IsActorActive(PlayerRef)) && ostim.AnimationRunning()
@@ -859,6 +878,7 @@ Function PlayerDefenseFailedEvent(actor aggressor)
     Utility.Wait(3)
     ostim.UseFades = bUseFades
     ostim.UseAutoFades = bAutoFades
+    PlayerRef.SetDontMove(false)
 endFunction
 
 actor[] function GetNearbyActors()
@@ -1012,9 +1032,10 @@ Bool Function doTrauma(Actor target, bool enter = true) ; credit: sexlab defeat 
         PreventActorDetection(target)
         Utility.Wait(1)
 
-        if !Target.HasMagicEffect(ODefeatMagicEffect)       
+        if !Target.HasMagicEffect(ODefeatMagicEffect)    
             ODefeatSpell.cast(Target)
         endif
+
         int Tries = 3
         float X
         float newX
@@ -1241,7 +1262,6 @@ endFunction
 bool tRobbed
 
 event robberyEvent(string eventName, string arg_s, float argNum, form sender)
-    writelog(1)
     RobPlayer(ostim.GetAggressiveActor())
     MoveToSafeSpot()
 
@@ -1255,12 +1275,10 @@ event robberyEvent(string eventName, string arg_s, float argNum, form sender)
 endEvent
 
 event safeWakeupEvent(string eventName, string arg_s, float argNum, form sender)
-    writelog(2)
     MoveToSafeSpot()
 endEvent
 
 event killEvent(string eventName, string arg_s, float argNum, form sender)
-    writelog(3)
     KillPlayer()
 endEvent
 

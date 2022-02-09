@@ -27,6 +27,7 @@ event OnPageDraw()
     AddHeaderOption(FONT_CUSTOM("Core Options", pink))
     AddToggleOptionST("EnablePlayerVictim_State", FONT_CUSTOM("Enable Player as Victim", lightRed), main.EnablePlayerVictim)
     AddToggleOptionST("EnablePlayerAggressor_State", "Enable Player as Aggressor", main.EnablePlayerAggressor)
+    AddToggleOptionST("EnableStruggle_State", "Enable Struggle Scene", main.EnableStruggle)
     AddToggleOptionST("MaleNPCsWontAssault_State", "Male NPCs as Aggressors", !main.MaleNPCsWontAssault)
     AddToggleOptionST("FemaleNPCsWontAssault_State", "Female NPCs as Aggressors", !main.femaleNPCsWontAssault)
 
@@ -34,6 +35,8 @@ event OnPageDraw()
     AddSliderOptionST("MinigameDifficultyModifier_State", "Minigame Difficulty Modifier", main.MinigameDifficultyModifier)
     AddSliderOptionST("MoralityToAssault_State", "Morality to Assault", main.MoralityToAssault)
     AddToggleOptionST("FollowersGetAssaulted_State", "Followers are Assaulted", main.FollowersGetAssaulted)
+    AddToggleOptionST("FollowersGetDismissed_State", "Followers are Dismissed", main.FollowersGetDismissed)
+    AddToggleOptionST("AllowOldPeopleRace_State", "Allow Old People to Assault", main.AllowOldPeopleRace)
 
     SetCursorPosition(1)
     AddHeaderOption(FONT_CUSTOM("Keybinds", pink))
@@ -77,6 +80,22 @@ state EnablePlayerAggressor_State
     event OnDefaultST(string state_id)
         Main.EnablePlayerAggressor = True
         SetToggleOptionValueST(Main.EnablePlayerAggressor)
+    endevent
+endState
+
+state EnableStruggle_State
+    event OnSelectST(string state_id)
+        Main.EnableStruggle = !Main.EnableStruggle
+        SetToggleOptionValueST(Main.EnableStruggle)
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("If enabled, the struggle minigame will run. If disabled, the assault scene will start immediately.")
+    endevent
+
+    event OnDefaultST(string state_id)
+        Main.EnableStruggle = True
+        SetToggleOptionValueST(Main.EnableStruggle)
     endevent
 endState
 
@@ -163,6 +182,40 @@ state FollowersGetAssaulted_State
     event OnDefaultST(string state_id)
         Main.FollowersGetAssaulted = True
         SetToggleOptionValueST(Main.FollowersGetAssaulted)
+    endevent
+endState
+
+
+state FollowersGetDismissed_State
+    event OnSelectST(string state_id)
+        Main.FollowersGetDismissed = !Main.FollowersGetDismissed
+        SetToggleOptionValueST(Main.FollowersGetDismissed)
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("If enabled, followers will be dismissed if the player is defeated.")
+    endevent
+
+    event OnDefaultST(string state_id)
+        Main.FollowersGetDismissed = True
+        SetToggleOptionValueST(Main.FollowersGetDismissed)
+    endevent
+endState
+
+
+state AllowOldPeopleRace_State
+    event OnSelectST(string state_id)
+        Main.AllowOldPeopleRace = !Main.AllowOldPeopleRace
+        SetToggleOptionValueST(Main.AllowOldPeopleRace)
+    endevent
+
+    event OnHighlightST(string state_id)
+        SetInfoText("If enabled, actors with the OldPeople Race won't be able to assault. (You can still assault them though, you sicko.)")
+    endevent
+
+    event OnDefaultST(string state_id)
+        Main.AllowOldPeopleRace = True
+        SetToggleOptionValueST(Main.AllowOldPeopleRace)
     endevent
 endState
 

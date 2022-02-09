@@ -1,8 +1,9 @@
 ScriptName ODefeatPlayer Extends ReferenceAlias
 import outils 
 
-actor playerref 
-ODefeatMain odefeat
+actor property playerref auto
+ODefeatMain property odefeat auto
+race property OldPeopleRace auto
 
 bool Property EnableVictim Auto ; do not modify directly
 
@@ -70,6 +71,7 @@ EndEvent
 
 Function HandlePlayerDeath()
 	actor[] enemies = osanative.sortactorsbydistance(playerref, PO3_SKSEFunctions.GetCombatTargets(playerref))
+	writelog(enemies.Length);
 	if (enemies.Length < 1)
 		ODefeatMain.KillPlayer()
 		Writelog("No enemies...")
@@ -81,16 +83,24 @@ Function HandlePlayerDeath()
 		endif 
 		if odefeat.FemaleNPCsWontAssault
 			enemies = OSANative.RemoveActorsWithGender(enemies, 1)
-		endif 
-
+		endif
 		int i = 0
 		int max = enemies.Length
 		while i < max 
 			actor enemy = enemies[i]
 			if (enemy.getav("morality") <= odefeat.MoralityToAssault)
 				if odefeat.isValidAttackTarget(enemy)
-					odefeat.attemptAttack(enemy, playerref)
-					return 
+					if (!odefeat.AllowOldPeopleRace && enemy.getRace() == OldPeopleRace)
+						;nothing
+					else
+						if !odefeat.EnableStruggle 
+							odefeat.PlayerDefenseFailedEvent(enemy)
+							return
+						else
+							odefeat.attemptAttack(enemy, playerref)
+							return
+						endif
+					endif
 				endif 
 			endif 
 
